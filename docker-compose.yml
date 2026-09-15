@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: game_portal_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gameuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gamepass}
+      POSTGRES_DB: ${POSTGRES_DB:-game_portal}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gameuser} -d ${POSTGRES_DB:-game_portal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - game_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: game_portal_web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gameuser}:${POSTGRES_PASSWORD:-gamepass}@db:5432/${POSTGRES_DB:-game_portal}
+      FLASK_ENV: production
+      FLASK_DEBUG: 0
+      SECRET_KEY: ${SECRET_KEY:-ubah-ini-di-production}
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app/static:/app/app/static
+      - ./instance:/app/instance
+    networks:
+      - game_network
+
+  rust_service:
+    build:
+      context: ./rust_service
+      dockerfile: Dockerfile
+    container_name: game_portal_rust
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - game_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  game_network:
+    driver: bridge
+
+apakah ini sudah lengkap dan benar
