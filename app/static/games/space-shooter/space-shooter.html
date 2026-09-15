@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Space Shooter</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+html, body { width:100%; height:100%; overflow:hidden; position:fixed; background:#000; color:#fff; touch-action:none; }
+body { display:flex; justify-content:center; align-items:center; }
+.bg-stars { position:fixed; inset:0; z-index:0; background:radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
+.game-container { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:8px; padding:8px; width:100%; height:100%; }
+.title { font-size:1.5rem; font-weight:800; background:linear-gradient(135deg,#22d3ee,#a78bfa); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:2px; text-transform:uppercase; filter:drop-shadow(0 0 12px rgba(34,211,238,0.5)); }
+.hud { display:flex; justify-content:space-between; align-items:center; width:100%; max-width:520px; background:rgba(15,23,42,0.85); backdrop-filter:blur(10px); padding:10px 16px; border-radius:12px; border:1px solid rgba(34,211,238,0.25); }
+.hud-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.hud-label { font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; }
+.hud-value { font-size:16px; font-weight:700; font-family:'Courier New',monospace; }
+.hud .score .hud-value { color:#22d3ee; }
+.hud .lives .hud-value { color:#ef4444; }
+.hud .wave .hud-value { color:#a78bfa; }
+.hud .hp .hud-value { color:#fbbf24; }
+.level-progress { width:100%; max-width:520px; height:6px; background:rgba(15,23,42,0.85); border-radius:3px; overflow:hidden; border:1px solid rgba(167,139,250,0.2); }
+.level-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#a78bfa,#22d3ee); transition:width 0.3s ease; }
+.canvas-wrapper { position:relative; display:inline-block; border:3px solid rgba(34,211,238,0.4); border-radius:14px; overflow:hidden; box-shadow:0 0 40px rgba(34,211,238,0.3); }
+canvas { display:block; background:#000; touch-action:none; }
+.overlay { position:absolute; inset:0; background:rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px; z-index:10; }
+.overlay.hidden { display:none; }
+.overlay h1 { font-size:1.8rem; margin-bottom:12px; background:linear-gradient(135deg,#22d3ee,#a78bfa); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.overlay h1.dead { background:linear-gradient(135deg,#ef4444,#f97316); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.overlay h1.win { background:linear-gradient(135deg,#fbbf24,#22c55e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.overlay p { margin-bottom:6px; font-size:13px; color:#cbd5e1; line-height:1.5; max-width:340px; }
+.overlay .final-score { font-size:2.2rem; font-weight:800; color:#fbbf24; margin:12px 0; font-family:'Courier New',monospace; }
+.overlay button { padding:12px 32px; background:linear-gradient(135deg,#22d3ee,#a78bfa); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:10px; box-shadow:0 4px 15px rgba(34,211,238,0.4); }
+.level-badge { display:inline-block; padding:4px 14px; background:rgba(167,139,250,0.2); border:1px solid #a78bfa; border-radius:20px; font-size:11px; color:#a78bfa; font-weight:700; margin-bottom:10px; text-transform:uppercase; }
+.toast { position:fixed; top:18%; left:50%; transform:translateX(-50%) scale(0); background:linear-gradient(135deg,#a78bfa,#22d3ee); color:#fff; padding:14px 28px; border-radius:14px; font-size:16px; font-weight:800; z-index:100; box-shadow:0 10px 40px rgba(34,211,238,0.6); pointer-events:none; text-align:center; }
+.toast.show { animation:toastPop 2s ease forwards; }
+@keyframes toastPop { 0%{transform:translateX(-50%) scale(0);opacity:0;} 15%{transform:translateX(-50%) scale(1.1);opacity:1;} 25%{transform:translateX(-50%) scale(1);opacity:1;} 85%{transform:translateX(-50%) scale(1);opacity:1;} 100%{transform:translateX(-50%) scale(0.9);opacity:0;} }
+.controls-mobile { display:none; gap:8px; margin-top:4px; }
+.controls-mobile button { padding:10px 18px; background:rgba(22,33,62,0.9); color:#22d3ee; border:2px solid #22d3ee; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; user-select:none; }
+@media (max-width:600px) { .title{font-size:1.1rem;} .hud{max-width:96vw;font-size:11px;padding:6px 10px;} .hud-value{font-size:13px;} .controls-mobile{display:flex;} }
+</style>
+</head>
+<body>
+<div class="bg-stars"></div>
+<div class="game-container">
+    <div class="title">🚀 Space Shooter</div>
+    <div class="hud">
+        <div class="hud-item score"><span class="hud-label">Score</span><span class="hud-value" id="score">0</span></div>
+        <div class="hud-item hp"><span class="hud-label">HP</span><span class="hud-value" id="hp">100</span></div>
+        <div class="hud-item wave"><span class="hud-label">Wave</span><span class="hud-value" id="wave">1/10</span></div>
+        <div class="hud-item lives"><span class="hud-label">Lives</span><span class="hud-value" id="lives">❤❤❤</span></div>
+    </div>
+    <div class="level-progress"><div class="level-progress-fill" id="progress"></div></div>
+    <div class="canvas-wrapper">
+        <canvas id="canvas" width="560" height="700"></canvas>
+        <div id="overlay" class="overlay">
+            <div class="level-badge" id="badge">WAVE 1</div>
+            <h1>🚀 SPACE SHOOTER</h1>
+            <p><strong>10 Wave</strong> dengan boss di setiap akhir!</p>
+            <p>← → untuk gerak · SPACE untuk tembak</p>
+            <p>atau swipe di mobile</p>
+            <button id="startBtn" type="button">▶ MULAI</button>
+        </div>
+    </div>
+    <div class="controls-mobile">
+        <button type="button" id="btnLeft">◀</button>
+        <button type="button" id="btnFire">🔥</button>
+        <button type="button" id="btnRight">▶</button>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var scoreEl = document.getElementById('score');
+var hpEl = document.getElementById('hp');
+var waveEl = document.getElementById('wave');
+var livesEl = document.getElementById('lives');
+var progressEl = document.getElementById('progress');
+var overlay = document.getElementById('overlay');
+var badge = document.getElementById('badge');
+var startBtn = document.getElementById('startBtn');
+var toast = document.getElementById('toast');
+var W = canvas.width, H = canvas.height;
+var player, bullets, enemies, enemyBullets, particles, stars;
+var score=0, hp=100, lives=3, wave=1, killsInWave=0, killsNeeded=5;
+var isRunning=false, isPaused=false, waveTransitioning=false;
+var bossSpawned=false;
+var gameLoop, frameCount=0;
+var keys = { left:false, right:false, fire:false };
+var audioCtx=null;
+function initAudio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function playSound(f,d,t,v){ t=t||'sine'; v=v||0.06; if(!audioCtx) return; try{ var o=audioCtx.createOscillator(); var g=audioCtx.createGain(); o.type=t; o.frequency.value=f; g.gain.value=v; g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d); }catch(e){} }
+var SFX = {
+    shoot:function(){ playSound(880,0.05,'square',0.04); },
+    hit:function(){ playSound(220,0.08,'sawtooth',0.05); },
+    explode:function(){ playSound(120,0.2,'sawtooth',0.08); },
+    levelUp:function(){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ playSound(f,0.15); },i*100); }); },
+    gameOver:function(){ [400,300,200,150].forEach(function(f,i){ setTimeout(function(){ playSound(f,0.2,'sawtooth',0.1); },i*120); }); },
+    win:function(){ [523,659,784,1047,1319].forEach(function(f,i){ setTimeout(function(){ playSound(f,0.2); },i*130); }); }
+};
+function fitCanvas(){ var maxW=Math.min(window.innerWidth-30,560); var maxH=Math.min(window.innerHeight-200,700); var ratio=W/H; var cw=maxW,ch=cw/ratio; if(ch>maxH){ch=maxH;cw=ch*ratio;} canvas.style.width=cw+'px'; canvas.style.height=ch+'px'; }
+window.addEventListener('resize',fitCanvas);
+function showToast(t){ toast.textContent=t; toast.classList.remove('show'); void toast.offsetWidth; toast.classList.add('show'); }
+function spawnParticles(x,y,color,n){ n=n||12; for(var i=0;i<n;i++){ var a=(Math.PI*2*i)/n+Math.random()*0.5; var sp=1+Math.random()*4; particles.push({ x:x, y:y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, color:color, size:2+Math.random()*3 }); } }
+function updateParticles(){ particles=particles.filter(function(p){return p.life>0;}); particles.forEach(function(p){ p.x+=p.vx; p.y+=p.vy; p.vx*=0.96; p.vy*=0.96; p.life-=0.025; }); }
+function drawParticles(){ particles.forEach(function(p){ ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); }); ctx.globalAlpha=1; }
+function initStars(){ stars=[]; for(var i=0;i<80;i++){ stars.push({ x:Math.random()*W, y:Math.random()*H, size:Math.random()*2+0.5, speed:Math.random()*2+0.5 }); } }
+function updateStars(){ stars.forEach(function(s){ s.y+=s.speed; if(s.y>H){ s.y=0; s.x=Math.random()*W; } }); }
+function drawStars(){ stars.forEach(function(s){ ctx.fillStyle='rgba(255,255,255,'+(0.3+s.size/3)+')'; ctx.fillRect(s.x,s.y,s.size,s.size); }); }
+function initGame(){ initAudio(); wave=1; score=0; hp=100; lives=3; killsInWave=0; bossSpawned=false; initStars(); resetWave(); overlay.classList.add('hidden'); isRunning=true; isPaused=false; waveTransitioning=false; clearInterval(gameLoop); gameLoop=setInterval(update,1000/60); }
+function resetWave(){ killsNeeded = 5 + (wave-1)*2; killsInWave=0; bossSpawned=false; player={ x:W/2, y:H-60, w:40, h:50, speed:6, cooldown:0, invuln:60, enginePulse:0 }; bullets=[]; enemies=[]; enemyBullets=[]; particles=[]; waveEl.textContent=wave+'/10'; badge.textContent='WAVE '+wave; hpEl.textContent=hp; scoreEl.textContent=score; livesEl.textContent='❤'.repeat(Math.max(0,lives)); spawnEnemies(); updateProgress(); }
+function updateProgress(){ var pct=(killsInWave/killsNeeded)*100; progressEl.style.width=Math.min(100,pct)+'%'; }
+function spawnEnemies(){ var count=killsNeeded; for(var i=0;i<count;i++){ var type=Math.random(); var enemy; if(type<0.6){ enemy={ x:60+Math.random()*(W-120), y:-40-Math.random()*300, w:44, h:44, speed:1+wave*0.15, hp:1+(wave>=5?1:0), type:'basic', color:'#ef4444', bobPhase:Math.random()*Math.PI*2 }; } else if(type<0.85){ enemy={ x:60+Math.random()*(W-120), y:-40-Math.random()*300, w:54, h:54, speed:0.8+wave*0.1, hp:2+Math.floor(wave/3), type:'tank', color:'#f97316', bobPhase:Math.random()*Math.PI*2 }; } else { enemy={ x:60+Math.random()*(W-120), y:-40-Math.random()*300, w:40, h:40, speed:2+wave*0.2, hp:1, type:'fast', color:'#a78bfa', bobPhase:Math.random()*Math.PI*2 }; } enemy.maxHp=enemy.hp; enemies.push(enemy); } }
+function spawnBoss(){ enemies=[]; var bossHp = 20 + wave*10; enemies.push({ x:W/2, y:-80, w:140, h:100, speed:0.5, hp:bossHp, maxHp:bossHp, type:'boss', color:'#dc2626', shootTimer:0, moveDir:1 }); bossSpawned=true; badge.textContent='BOSS WAVE '+wave; showToast('👹 BOSS WAVE '+wave+'!'); }
+function update(){
+    if(!isRunning||isPaused||waveTransitioning) return;
+    frameCount++; updateStars();
+    player.enginePulse += 0.3;
+    if(keys.left) player.x-=player.speed;
+    if(keys.right) player.x+=player.speed;
+    player.x=Math.max(30,Math.min(W-30,player.x));
+    if(player.invuln>0) player.invuln--;
+    player.cooldown--;
+    if(keys.fire && player.cooldown<=0){
+        bullets.push({ x:player.x-8, y:player.y-25, vy:-9, w:4, h:12, dmg:1 });
+        bullets.push({ x:player.x+8, y:player.y-25, vy:-9, w:4, h:12, dmg:1 });
+        player.cooldown=10; SFX.shoot();
+    }
+    bullets.forEach(function(b){ b.y+=b.vy; });
+    bullets=bullets.filter(function(b){ return b.y>-20; });
+    enemies.forEach(function(e){
+        e.bobPhase = (e.bobPhase || 0) + 0.08;
+        if(e.type==='boss'){ e.y+=e.speed; if(e.y>60) e.y=60; e.x+=e.moveDir*1.5; if(e.x<80||e.x>W-80) e.moveDir*=-1; e.shootTimer--; if(e.shootTimer<=0){ e.shootTimer=Math.max(20,60-wave*3); for(var i=-1;i<=1;i++){ enemyBullets.push({ x:e.x, y:e.y+e.h/2, vx:i*2, vy:4, r:6 }); } } }
+        else { e.y+=e.speed; }
+    });
+    enemies=enemies.filter(function(e){ return e.y<H+80; });
+    enemyBullets.forEach(function(b){ b.x+=b.vx; b.y+=b.vy; });
+    enemyBullets=enemyBullets.filter(function(b){ return b.y<H+20 && b.x>-20 && b.x<W+20; });
+    enemies.forEach(function(e){ bullets.forEach(function(b){ if(!b.dead && b.x>e.x-e.w/2 && b.x<e.x+e.w/2 && b.y>e.y-e.h/2 && b.y<e.y+e.h/2){ b.dead=true; e.hp-=b.dmg; SFX.hit(); spawnParticles(b.x,b.y,'#fbbf24',4); if(e.hp<=0){ e.dead=true; var pts = e.type==='boss'? 500 : e.type==='tank'? 30 : e.type==='fast'? 20 : 10; score+=pts; scoreEl.textContent=score; killsInWave++; SFX.explode(); spawnParticles(e.x,e.y,e.color,15); updateProgress(); } } }); });
+    bullets=bullets.filter(function(b){ return !b.dead; });
+    enemies=enemies.filter(function(e){ return !e.dead; });
+    if(!bossSpawned && killsInWave>=killsNeeded && enemies.length===0){ spawnBoss(); }
+    if(bossSpawned && enemies.length===0){ nextWave(); return; }
+    enemies.forEach(function(e){ if(player.invuln>0) return; var dx=Math.abs(player.x-e.x), dy=Math.abs(player.y-e.y); if(dx<e.w/2+18 && dy<e.h/2+18){ hitPlayer(e.type==='boss'?40:20); } });
+    enemyBullets.forEach(function(b){ if(player.invuln>0) return; var dx=player.x-b.x, dy=player.y-b.y; if(Math.sqrt(dx*dx+dy*dy)<20){ b.dead=true; hitPlayer(10); } });
+    enemyBullets=enemyBullets.filter(function(b){return !b.dead;});
+    updateParticles(); draw();
+}
+function hitPlayer(dmg){ hp-=dmg; hpEl.textContent=Math.max(0,hp); player.invuln=60; SFX.explode(); spawnParticles(player.x,player.y,'#ef4444',20); if(hp<=0){ lives--; livesEl.textContent='❤'.repeat(Math.max(0,lives)); if(lives<=0){ gameOver('Kehabisan nyawa!'); } else { hp=100; hpEl.textContent=100; player.invuln=120; } } }
+function draw(){
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+    drawStars();
+    ctx.save();
+    if(player.invuln>0 && Math.floor(frameCount/6)%2===0){ ctx.globalAlpha=0.4; }
+    drawPlayer();
+    ctx.restore();
+    bullets.forEach(function(b){ ctx.fillStyle='#22d3ee'; ctx.shadowColor='#22d3ee'; ctx.shadowBlur=10; ctx.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h); ctx.shadowBlur=0; });
+    enemies.forEach(function(e){ drawEnemy(e); });
+    enemyBullets.forEach(function(b){ ctx.fillStyle='#ef4444'; ctx.shadowColor='#ef4444'; ctx.shadowBlur=10; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; });
+    drawParticles();
+}
+
+/* ============================================================
+   KONFIGURASI PLAYER PER WAVE
+   ============================================================ */
+var PLAYER_CONFIG = [
+    { name:'Scout',    body1:'#e0f2fe', body2:'#67e8f9', body3:'#22d3ee', body4:'#0e7490', wing1:'#0891b2', wing2:'#155e75', canopy1:'#ffffff', canopy2:'#bae6fd', canopy3:'#0ea5e9', canopy4:'#075985', accent:'#22d3ee' },
+    { name:'Falcon',   body1:'#fef3c7', body2:'#fcd34d', body3:'#f59e0b', body4:'#78350f', wing1:'#b45309', wing2:'#78350f', canopy1:'#ffffff', canopy2:'#fde68a', canopy3:'#f59e0b', canopy4:'#78350f', accent:'#fbbf24' },
+    { name:'Viper',    body1:'#dcfce7', body2:'#86efac', body3:'#22c55e', body4:'#14532d', wing1:'#15803d', wing2:'#14532d', canopy1:'#ffffff', canopy2:'#bbf7d0', canopy3:'#22c55e', canopy4:'#14532d', accent:'#4ade80' },
+    { name:'Phantom',  body1:'#f3e8ff', body2:'#d8b4fe', body3:'#a855f7', body4:'#4c1d95', wing1:'#7c3aed', wing2:'#4c1d95', canopy1:'#ffffff', canopy2:'#e9d5ff', canopy3:'#a855f7', canopy4:'#4c1d95', accent:'#c084fc' },
+    { name:'Blaze',    body1:'#fee2e2', body2:'#fca5a5', body3:'#ef4444', body4:'#7f1d1d', wing1:'#dc2626', wing2:'#7f1d1d', canopy1:'#ffffff', canopy2:'#fecaca', canopy3:'#ef4444', canopy4:'#7f1d1d', accent:'#f87171' },
+    { name:'Storm',    body1:'#e0f2fe', body2:'#7dd3fc', body3:'#0ea5e9', body4:'#0c4a6e', wing1:'#0284c7', wing2:'#0c4a6e', canopy1:'#ffffff', canopy2:'#bae6fd', canopy3:'#0ea5e9', canopy4:'#0c4a6e', accent:'#38bdf8' },
+    { name:'Titan',    body1:'#e5e7eb', body2:'#9ca3af', body3:'#4b5563', body4:'#1f2937', wing1:'#374151', wing2:'#111827', canopy1:'#ffffff', canopy2:'#d1d5db', canopy3:'#4b5563', canopy4:'#111827', accent:'#6b7280' },
+    { name:'Nebula',   body1:'#fae8ff', body2:'#f0abfc', body3:'#d946ef', body4:'#701a75', wing1:'#c026d3', wing2:'#701a75', canopy1:'#ffffff', canopy2:'#f5d0fe', canopy3:'#d946ef', canopy4:'#701a75', accent:'#e879f9' },
+    { name:'Inferno',  body1:'#fed7aa', body2:'#fdba74', body3:'#f97316', body4:'#7c2d12', wing1:'#ea580c', wing2:'#7c2d12', canopy1:'#ffffff', canopy2:'#fed7aa', canopy3:'#f97316', canopy4:'#7c2d12', accent:'#fb923c' },
+    { name:'Cosmic',   body1:'#fef9c3', body2:'#fde047', body3:'#eab308', body4:'#713f12', wing1:'#ca8a04', wing2:'#713f12', canopy1:'#ffffff', canopy2:'#fef08a', canopy3:'#eab308', canopy4:'#713f12', accent:'#facc15' }
+];
+
+function getPlayerConfig(){ return PLAYER_CONFIG[Math.min(wave-1, PLAYER_CONFIG.length-1)]; }
+
+/* ============================================================
+   PLAYER — Pesawat berubah tiap wave
+   ============================================================ */
+function drawPlayer(){
+    var cfg = getPlayerConfig();
+    ctx.save();
+    ctx.translate(player.x, player.y);
+
+    // ===== EFEK MESIN PENDORONG =====
+    var flameLen = 14 + Math.sin(player.enginePulse) * 4;
+    var flameGrad = ctx.createLinearGradient(0, 22, 0, 22 + flameLen);
+    flameGrad.addColorStop(0, 'rgba(255, 220, 100, 0.95)');
+    flameGrad.addColorStop(0.4, 'rgba(255, 120, 40, 0.75)');
+    flameGrad.addColorStop(1, 'rgba(255, 60, 20, 0)');
+    ctx.fillStyle = flameGrad;
+    ctx.beginPath();
+    ctx.moveTo(-6, 22);
+    ctx.lineTo(0, 22 + flameLen);
+    ctx.lineTo(6, 22);
+    ctx.closePath();
+    ctx.fill();
+
+    // ===== EKOR =====
+    ctx.fillStyle = cfg.body4;
+    ctx.beginPath();
+    ctx.moveTo(0, 12);
+    ctx.lineTo(-10, 26);
+    ctx.lineTo(-4, 26);
+    ctx.lineTo(0, 20);
+    ctx.lineTo(4, 26);
+    ctx.lineTo(10, 26);
+    ctx.closePath();
+    ctx.fill();
+
+    // ===== SAYAP BELAKANG =====
+    ctx.fillStyle = cfg.wing2;
+    ctx.beginPath();
+    ctx.moveTo(-8, 5);
+    ctx.lineTo(-24, 18);
+    ctx.lineTo(-20, 22);
+    ctx.lineTo(-8, 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(8, 5);
+    ctx.lineTo(24, 18);
+    ctx.lineTo(20, 22);
+    ctx.lineTo(8, 14);
+    ctx.closePath();
+    ctx.fill();
+
+    // ===== SAYAP UTAMA =====
+    ctx.fillStyle = cfg.wing1;
+    ctx.shadowColor = cfg.accent;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(-10, -8);
+    ctx.lineTo(-30, 8);
+    ctx.lineTo(-28, 14);
+    ctx.lineTo(-10, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(10, -8);
+    ctx.lineTo(30, 8);
+    ctx.lineTo(28, 14);
+    ctx.lineTo(10, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // ===== BADAN PESAWAT =====
+    var bodyGrad = ctx.createLinearGradient(0, -25, 0, 25);
+    bodyGrad.addColorStop(0, cfg.body1);
+    bodyGrad.addColorStop(0.3, cfg.body2);
+    bodyGrad.addColorStop(0.6, cfg.body3);
+    bodyGrad.addColorStop(1, cfg.body4);
+    ctx.fillStyle = bodyGrad;
+    ctx.shadowColor = cfg.accent;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(0, -26);
+    ctx.bezierCurveTo(6, -22, 8, -10, 9, 0);
+    ctx.bezierCurveTo(10, 10, 8, 20, 6, 24);
+    ctx.lineTo(-6, 24);
+    ctx.bezierCurveTo(-8, 20, -10, 10, -9, 0);
+    ctx.bezierCurveTo(-8, -10, -6, -22, 0, -26);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.lineTo(0, 20);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-7, -8);
+    ctx.lineTo(7, -8);
+    ctx.moveTo(-8, 8);
+    ctx.lineTo(8, 8);
+    ctx.stroke();
+
+    // ===== KOKPIT =====
+    var canopyGrad = ctx.createRadialGradient(-2, -14, 1, 0, -12, 10);
+    canopyGrad.addColorStop(0, cfg.canopy1);
+    canopyGrad.addColorStop(0.3, cfg.canopy2);
+    canopyGrad.addColorStop(0.7, cfg.canopy3);
+    canopyGrad.addColorStop(1, cfg.canopy4);
+    ctx.fillStyle = canopyGrad;
+    ctx.shadowColor = cfg.canopy3;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.ellipse(0, -14, 6, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(-2, -17, 2, 3, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ===== MERIAM =====
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-10, -22, 3, 8);
+    ctx.fillRect(7, -22, 3, 8);
+
+    ctx.fillStyle = cfg.accent;
+    ctx.shadowColor = cfg.accent;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(-8.5, -22, 2, 0, Math.PI * 2);
+    ctx.arc(8.5, -22, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // ===== STABILIZER =====
+    ctx.fillStyle = cfg.body4;
+    ctx.beginPath();
+    ctx.moveTo(-9, 6);
+    ctx.lineTo(-14, 12);
+    ctx.lineTo(-9, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(9, 6);
+    ctx.lineTo(14, 12);
+    ctx.lineTo(9, 12);
+    ctx.closePath();
+    ctx.fill();
+
+    // ===== LAMPU NAVIGASI =====
+    var blink = Math.sin(frameCount * 0.15) > 0;
+    if(blink) {
+        ctx.fillStyle = '#ef4444';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(-28, 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#22c55e';
+        ctx.shadowColor = '#22c55e';
+        ctx.beginPath();
+        ctx.arc(28, 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.restore();
+}
+
+/* ============================================================
+   ENEMY — dispatch per tipe
+   ============================================================ */
+function drawEnemy(e){
+    ctx.save();
+    ctx.translate(e.x, e.y);
+
+    if(e.type === 'basic')      drawBasicEnemy(e);
+    else if(e.type === 'tank')  drawTankEnemy(e);
+    else if(e.type === 'fast')  drawFastEnemy(e);
+    else if(e.type === 'boss')  drawBossEnemy(e);
+
+    // ===== HEALTH BAR =====
+    if(e.maxHp > 1) {
+        var barW = e.w, barH = 4;
+        var barX = -barW / 2;
+        var barY = -e.h / 2 - 10;
+        var pct = Math.max(0, e.hp / e.maxHp);
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = pct > 0.6 ? '#22c55e' : pct > 0.3 ? '#fbbf24' : '#ef4444';
+        ctx.fillRect(barX, barY, barW * pct, barH);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barW, barH);
+    }
+
+    ctx.restore();
+}
+
+/* ===== BASIC ENEMY ===== */
+function drawBasicEnemy(e){
+    ctx.fillStyle = 'rgba(255, 200, 50, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(-5, -e.h/2 + 5);
+    ctx.lineTo(0, -e.h/2 - 8);
+    ctx.lineTo(5, -e.h/2 + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#7f1d1d';
+    ctx.beginPath();
+    ctx.moveTo(-8, 0); ctx.lineTo(-22, 12); ctx.lineTo(-18, 18); ctx.lineTo(-8, 10);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(8, 0); ctx.lineTo(22, 12); ctx.lineTo(18, 18); ctx.lineTo(8, 10);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#991b1b';
+    ctx.beginPath();
+    ctx.moveTo(-8, -5); ctx.lineTo(-18, 0); ctx.lineTo(-16, 6); ctx.lineTo(-8, 4);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(8, -5); ctx.lineTo(18, 0); ctx.lineTo(16, 6); ctx.lineTo(8, 4);
+    ctx.closePath(); ctx.fill();
+
+    var bodyGrad = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bodyGrad.addColorStop(0, '#fca5a5');
+    bodyGrad.addColorStop(0.4, '#ef4444');
+    bodyGrad.addColorStop(1, '#7f1d1d');
+    ctx.fillStyle = bodyGrad;
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(0, e.h/2 - 2);
+    ctx.bezierCurveTo(5, e.h/2 - 8, 6, 0, 5, -e.h/2 + 8);
+    ctx.bezierCurveTo(3, -e.h/2 + 2, -3, -e.h/2 + 2, -5, -e.h/2 + 8);
+    ctx.bezierCurveTo(-6, 0, -5, e.h/2 - 8, 0, e.h/2 - 2);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    var canopyGrad = ctx.createRadialGradient(-1, e.h/2 - 12, 1, 0, e.h/2 - 10, 6);
+    canopyGrad.addColorStop(0, '#fef3c7');
+    canopyGrad.addColorStop(0.6, '#fbbf24');
+    canopyGrad.addColorStop(1, '#78350f');
+    ctx.fillStyle = canopyGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, e.h/2 - 10, 4, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if(Math.sin(frameCount * 0.2) > 0){
+        ctx.fillStyle = '#fbbf24';
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(0, -e.h/2 + 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.fillStyle = '#450a0a';
+    ctx.fillRect(-2, e.h/2 - 6, 1.5, 5);
+    ctx.fillRect(0.5, e.h/2 - 6, 1.5, 5);
+}
+
+/* ===== TANK ENEMY ===== */
+function drawTankEnemy(e){
+    ctx.fillStyle = 'rgba(255, 150, 50, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(-8, -e.h/2 + 8);
+    ctx.lineTo(0, -e.h/2 - 12);
+    ctx.lineTo(8, -e.h/2 + 8);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#7c2d12';
+    ctx.beginPath();
+    ctx.moveTo(-12, -2); ctx.lineTo(-28, 10); ctx.lineTo(-26, 20); ctx.lineTo(-12, 12);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(12, -2); ctx.lineTo(28, 10); ctx.lineTo(26, 20); ctx.lineTo(12, 12);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#9a3412';
+    ctx.beginPath();
+    ctx.moveTo(-12, -8); ctx.lineTo(-26, -2); ctx.lineTo(-24, 4); ctx.lineTo(-12, 2);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(12, -8); ctx.lineTo(26, -2); ctx.lineTo(24, 4); ctx.lineTo(12, 2);
+    ctx.closePath(); ctx.fill();
+
+    var bodyGrad = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bodyGrad.addColorStop(0, '#fed7aa');
+    bodyGrad.addColorStop(0.4, '#f97316');
+    bodyGrad.addColorStop(1, '#7c2d12');
+    ctx.fillStyle = bodyGrad;
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(0, e.h/2 - 3);
+    ctx.bezierCurveTo(8, e.h/2 - 10, 10, 0, 8, -e.h/2 + 10);
+    ctx.bezierCurveTo(5, -e.h/2 + 3, -5, -e.h/2 + 3, -8, -e.h/2 + 10);
+    ctx.bezierCurveTo(-10, 0, -8, e.h/2 - 10, 0, e.h/2 - 3);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-7, -8); ctx.lineTo(7, -8);
+    ctx.moveTo(-8, 4); ctx.lineTo(8, 4);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(0, e.h/2 - 12, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#1c1917';
+    ctx.fillRect(-3, e.h/2 - 10, 2, 8);
+    ctx.fillRect(1, e.h/2 - 10, 2, 8);
+
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(-2, e.h/2 - 2, 1.5, 0, Math.PI * 2);
+    ctx.arc(2, e.h/2 - 2, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+/* ===== FAST ENEMY ===== */
+function drawFastEnemy(e){
+    ctx.fillStyle = 'rgba(200, 100, 255, 0.8)';
+    ctx.beginPath();
+    ctx.moveTo(-3, -e.h/2 + 3);
+    ctx.lineTo(0, -e.h/2 - 15);
+    ctx.lineTo(3, -e.h/2 + 3);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#5b21b6';
+    ctx.beginPath();
+    ctx.moveTo(-5, -3); ctx.lineTo(-18, 6); ctx.lineTo(-16, 10); ctx.lineTo(-5, 5);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(5, -3); ctx.lineTo(18, 6); ctx.lineTo(16, 10); ctx.lineTo(5, 5);
+    ctx.closePath(); ctx.fill();
+
+    var bodyGrad = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bodyGrad.addColorStop(0, '#e9d5ff');
+    bodyGrad.addColorStop(0.4, '#a78bfa');
+    bodyGrad.addColorStop(1, '#4c1d95');
+    ctx.fillStyle = bodyGrad;
+    ctx.shadowColor = '#a78bfa';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(0, e.h/2 - 2);
+    ctx.bezierCurveTo(4, e.h/2 - 8, 5, 0, 4, -e.h/2 + 6);
+    ctx.bezierCurveTo(2, -e.h/2 + 1, -2, -e.h/2 + 1, -4, -e.h/2 + 6);
+    ctx.bezierCurveTo(-5, 0, -4, e.h/2 - 8, 0, e.h/2 - 2);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -e.h/2 + 8);
+    ctx.lineTo(0, e.h/2 - 8);
+    ctx.stroke();
+
+    ctx.fillStyle = '#c4b5fd';
+    ctx.shadowColor = '#c4b5fd';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.ellipse(0, e.h/2 - 10, 2.5, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+/* ============================================================
+   BOSS — 10 bentuk berbeda per wave
+   ============================================================ */
+function drawBossEnemy(e){
+    var w = wave; // boss wave index
+    // Warna boss bergeser tiap wave
+    var bossColors = [
+        { dark:'#7f1d1d', mid:'#991b1b', light:'#fca5a5', accent:'#dc2626', cockpit:'#f59e0b' },   // 1
+        { dark:'#78350f', mid:'#b45309', light:'#fde68a', accent:'#f59e0b', cockpit:'#fbbf24' },   // 2
+        { dark:'#14532d', mid:'#15803d', light:'#86efac', accent:'#22c55e', cockpit:'#4ade80' },   // 3
+        { dark:'#4c1d95', mid:'#7c3aed', light:'#d8b4fe', accent:'#a855f7', cockpit:'#c084fc' },   // 4
+        { dark:'#7f1d1d', mid:'#dc2626', light:'#fecaca', accent:'#ef4444', cockpit:'#f87171' },   // 5
+        { dark:'#0c4a6e', mid:'#0284c7', light:'#7dd3fc', accent:'#0ea5e9', cockpit:'#38bdf8' },   // 6
+        { dark:'#1f2937', mid:'#374151', light:'#9ca3af', accent:'#4b5563', cockpit:'#6b7280' },   // 7
+        { dark:'#701a75', mid:'#c026d3', light:'#f0abfc', accent:'#d946ef', cockpit:'#e879f9' },   // 8
+        { dark:'#7c2d12', mid:'#ea580c', light:'#fdba74', accent:'#f97316', cockpit:'#fb923c' },   // 9
+        { dark:'#713f12', mid:'#ca8a04', light:'#fde047', accent:'#eab308', cockpit:'#facc15' }    // 10
+    ];
+    var c = bossColors[Math.min(w-1, bossColors.length-1)];
+
+    // Pilih bentuk berdasarkan wave
+    var shapeIndex = (w - 1) % 10;
+
+    switch(shapeIndex) {
+        case 0: drawBossShape1(e, c); break;
+        case 1: drawBossShape2(e, c); break;
+        case 2: drawBossShape3(e, c); break;
+        case 3: drawBossShape4(e, c); break;
+        case 4: drawBossShape5(e, c); break;
+        case 5: drawBossShape6(e, c); break;
+        case 6: drawBossShape7(e, c); break;
+        case 7: drawBossShape8(e, c); break;
+        case 8: drawBossShape9(e, c); break;
+        case 9: drawBossShape10(e, c); break;
+    }
+
+    // ===== MATA MERAH BOSS (semua bentuk) =====
+    var eyeGlow = 0.5 + Math.sin(frameCount * 0.1) * 0.5;
+    ctx.fillStyle = 'rgba(255, 0, 0, ' + eyeGlow + ')';
+    ctx.shadowColor = '#ff0000';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(-6, -e.h/2 + 20, 3, 0, Math.PI * 2);
+    ctx.arc(6, -e.h/2 + 20, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+/* Boss 1 — "Warlord" — Segi enam lebar dengan 2 turbin */
+function drawBossShape1(e, c){
+    // Sayap besar
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(-40, -10); ctx.lineTo(-70, 20); ctx.lineTo(-65, 35); ctx.lineTo(-40, 20);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(40, -10); ctx.lineTo(70, 20); ctx.lineTo(65, 35); ctx.lineTo(40, 20);
+    ctx.closePath(); ctx.fill();
+    // Sayap depan
+    ctx.fillStyle = c.mid;
+    ctx.beginPath();
+    ctx.moveTo(-40, -20); ctx.lineTo(-68, -8); ctx.lineTo(-66, 5); ctx.lineTo(-40, -3);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(40, -20); ctx.lineTo(68, -8); ctx.lineTo(66, 5); ctx.lineTo(40, -3);
+    ctx.closePath(); ctx.fill();
+    // Turbin
+    ctx.fillStyle = c.dark;
+    ctx.beginPath(); ctx.arc(-55, 25, 8, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(55, 25, 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255, 100, 30, 0.6)';
+    ctx.beginPath(); ctx.arc(-55, 25, 5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(55, 25, 5, 0, Math.PI*2); ctx.fill();
+    // Badan
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.3, c.accent); bg.addColorStop(0.7, c.mid); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.moveTo(0, e.h/2 - 5);
+    ctx.bezierCurveTo(15, e.h/2 - 15, 20, 5, 15, -e.h/2 + 15);
+    ctx.bezierCurveTo(8, -e.h/2 + 5, -8, -e.h/2 + 5, -15, -e.h/2 + 15);
+    ctx.bezierCurveTo(-20, 5, -15, e.h/2 - 15, 0, e.h/2 - 5);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Kokpit
+    drawBossCockpit(e, c, 0, e.h/2 - 20, 8, 10);
+}
+
+/* Boss 2 — "Reaper" — Bentuk segitiga terbalik dengan sayap sabit */
+function drawBossShape2(e, c){
+    // Sayap sabit
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(-30, -30);
+    ctx.quadraticCurveTo(-75, 0, -60, 40);
+    ctx.lineTo(-45, 25);
+    ctx.quadraticCurveTo(-55, 5, -30, -10);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(30, -30);
+    ctx.quadraticCurveTo(75, 0, 60, 40);
+    ctx.lineTo(45, 25);
+    ctx.quadraticCurveTo(55, 5, 30, -10);
+    ctx.closePath(); ctx.fill();
+    // Badan segitiga terbalik
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.4, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.moveTo(0, -e.h/2 + 5);
+    ctx.lineTo(22, e.h/2 - 10);
+    ctx.lineTo(0, e.h/2 + 5);
+    ctx.lineTo(-22, e.h/2 - 10);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    drawBossCockpit(e, c, 0, 0, 7, 9);
+}
+
+/* Boss 3 — "Hydra" — 3 kepala dengan sayap melebar */
+function drawBossShape3(e, c){
+    // Sayap besar
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(-25, -20); ctx.lineTo(-80, 0); ctx.lineTo(-70, 30); ctx.lineTo(-25, 15);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(25, -20); ctx.lineTo(80, 0); ctx.lineTo(70, 30); ctx.lineTo(25, 15);
+    ctx.closePath(); ctx.fill();
+    // 3 kepala
+    ctx.fillStyle = c.mid;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 15;
+    ctx.beginPath(); ctx.arc(-25, -10, 12, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -20, 15, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(25, -10, 12, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Badan
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.4, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(0, e.h/2 - 5);
+    ctx.bezierCurveTo(18, e.h/2 - 15, 22, 0, 18, -e.h/2 + 20);
+    ctx.lineTo(-18, -e.h/2 + 20);
+    ctx.bezierCurveTo(-22, 0, -18, e.h/2 - 15, 0, e.h/2 - 5);
+    ctx.closePath(); ctx.fill();
+    drawBossCockpit(e, c, 0, 0, 8, 10);
+}
+
+/* Boss 4 — "Wraith" — Bentuk berlian dengan 4 sirip */
+function drawBossShape4(e, c){
+    // 4 sirip diagonal
+    ctx.fillStyle = c.dark;
+    for(var sx = -1; sx <= 1; sx += 2){
+        for(var sy = -1; sy <= 1; sy += 2){
+            ctx.beginPath();
+            ctx.moveTo(sx * 25, sy * 15);
+            ctx.lineTo(sx * 65, sy * 45);
+            ctx.lineTo(sx * 45, sy * 40);
+            ctx.lineTo(sx * 20, sy * 10);
+            ctx.closePath(); ctx.fill();
+        }
+    }
+    // Badan berlian
+    var bg = ctx.createRadialGradient(0, 0, 5, 0, 0, 55);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.5, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 22;
+    ctx.beginPath();
+    ctx.moveTo(0, -e.h/2 + 5);
+    ctx.lineTo(30, 0);
+    ctx.lineTo(0, e.h/2 - 5);
+    ctx.lineTo(-30, 0);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    drawBossCockpit(e, c, 0, 0, 8, 8);
+}
+
+/* Boss 5 — "Cyclops" — Satu mata besar di tengah */
+function drawBossShape5(e, c){
+    // Sayap horizontal
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(-30, 0); ctx.lineTo(-80, 20); ctx.lineTo(-75, 35); ctx.lineTo(-30, 15);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(30, 0); ctx.lineTo(80, 20); ctx.lineTo(75, 35); ctx.lineTo(30, 15);
+    ctx.closePath(); ctx.fill();
+    // Badan oval lebar
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.4, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 35, e.h/2 - 5, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Mata besar
+    var eyeGrad = ctx.createRadialGradient(0, -5, 3, 0, 0, 22);
+    eyeGrad.addColorStop(0, '#ffffff');
+    eyeGrad.addColorStop(0.4, c.cockpit);
+    eyeGrad.addColorStop(1, c.dark);
+    ctx.fillStyle = eyeGrad;
+    ctx.shadowColor = c.cockpit; ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(0, -5, 20, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Pupil
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(0, -5, 8, 0, Math.PI*2);
+    ctx.fill();
+}
+
+/* Boss 6 — "Specter" — Bentuk hantu dengan ekor panjang */
+function drawBossShape6(e, c){
+    // Sayap lancip ke atas
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(-15, -30); ctx.lineTo(-55, -50); ctx.lineTo(-45, -20); ctx.lineTo(-20, -15);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(15, -30); ctx.lineTo(55, -50); ctx.lineTo(45, -20); ctx.lineTo(20, -15);
+    ctx.closePath(); ctx.fill();
+    // Badan hantu
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.5, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.moveTo(0, -e.h/2 + 5);
+    ctx.bezierCurveTo(20, -e.h/2 + 15, 25, 0, 20, e.h/2 - 10);
+    ctx.quadraticCurveTo(10, e.h/2, 0, e.h/2 - 5);
+    ctx.quadraticCurveTo(-10, e.h/2, -20, e.h/2 - 10);
+    ctx.bezierCurveTo(-25, 0, -20, -e.h/2 + 15, 0, -e.h/2 + 5);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    drawBossCockpit(e, c, 0, 0, 6, 10);
+}
+
+/* Boss 7 — "Fortress" — Bentuk kotak besar dengan 4 turret */
+function drawBossShape7(e, c){
+    // Sayap kotak
+    ctx.fillStyle = c.dark;
+    ctx.fillRect(-75, -15, 45, 40);
+    ctx.fillRect(30, -15, 45, 40);
+    // Panel armor
+    ctx.fillStyle = c.mid;
+    ctx.fillRect(-75, -15, 45, 8);
+    ctx.fillRect(30, -15, 45, 8);
+    // Turret (4 buah)
+    ctx.fillStyle = c.dark;
+    ctx.fillRect(-65, 25, 8, 15);
+    ctx.fillRect(-35, 25, 8, 15);
+    ctx.fillRect(27, 25, 8, 15);
+    ctx.fillRect(57, 25, 8, 15);
+    // Ujung turret
+    ctx.fillStyle = c.accent;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(-61, 40, 3, 0, Math.PI*2);
+    ctx.arc(-31, 40, 3, 0, Math.PI*2);
+    ctx.arc(31, 40, 3, 0, Math.PI*2);
+    ctx.arc(61, 40, 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Badan utama kotak
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.4, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 20;
+    ctx.fillRect(-30, -e.h/2 + 5, 60, e.h - 10);
+    ctx.shadowBlur = 0;
+    // Garis panel
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-30, -10); ctx.lineTo(30, -10);
+    ctx.moveTo(-30, 10); ctx.lineTo(30, 10);
+    ctx.moveTo(-30, 25); ctx.lineTo(30, 25);
+    ctx.stroke();
+    drawBossCockpit(e, c, 0, -e.h/2 + 20, 10, 8);
+}
+
+/* Boss 8 — "Serpent" — Bentuk ular melingkar */
+function drawBossShape8(e, c){
+    // Sayap melengkung
+    ctx.fillStyle = c.dark;
+    for(var side = -1; side <= 1; side += 2){
+        ctx.beginPath();
+        ctx.moveTo(side * 25, -20);
+        ctx.quadraticCurveTo(side * 70, -30, side * 65, 25);
+        ctx.quadraticCurveTo(side * 55, 0, side * 25, 10);
+        ctx.closePath(); ctx.fill();
+    }
+    // Badan ular melingkar
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.5, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 25, e.h/2 - 5, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Sisik (garis horizontal)
+    ctx.strokeStyle = c.dark; ctx.lineWidth = 2;
+    for(var yy = -30; yy <= 30; yy += 12){
+        ctx.beginPath();
+        ctx.moveTo(-20, yy); ctx.lineTo(20, yy);
+        ctx.stroke();
+    }
+    drawBossCockpit(e, c, 0, -e.h/2 + 20, 8, 8);
+}
+
+/* Boss 9 — "Phoenix" — Bentuk burung api dengan ekor */
+function drawBossShape9(e, c){
+    // Sayap api
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(-20, -25);
+    ctx.quadraticCurveTo(-75, -15, -70, 15);
+    ctx.quadraticCurveTo(-55, 5, -35, 20);
+    ctx.quadraticCurveTo(-30, 0, -20, -5);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(20, -25);
+    ctx.quadraticCurveTo(75, -15, 70, 15);
+    ctx.quadraticCurveTo(55, 5, 35, 20);
+    ctx.quadraticCurveTo(30, 0, 20, -5);
+    ctx.closePath(); ctx.fill();
+    // Ekor api
+    ctx.fillStyle = c.accent;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 15;
+    for(var i = -2; i <= 2; i++){
+        ctx.beginPath();
+        ctx.moveTo(i * 8, e.h/2 - 15);
+        ctx.lineTo(i * 10, e.h/2 + 15);
+        ctx.lineTo(i * 6, e.h/2 - 10);
+        ctx.closePath(); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    // Badan burung
+    var bg = ctx.createLinearGradient(0, -e.h/2, 0, e.h/2);
+    bg.addColorStop(0, c.light); bg.addColorStop(0.4, c.accent); bg.addColorStop(1, c.dark);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.moveTo(0, -e.h/2 + 5);
+    ctx.bezierCurveTo(20, -e.h/2 + 20, 25, 10, 15, e.h/2 - 15);
+    ctx.lineTo(-15, e.h/2 - 15);
+    ctx.bezierCurveTo(-25, 10, -20, -e.h/2 + 20, 0, -e.h/2 + 5);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    drawBossCockpit(e, c, 0, -10, 7, 10);
+}
+
+/* Boss 10 — "Omega" — Bentuk gabungan semua kekuatan */
+function drawBossShape10(e, c){
+    // Cincin luar (banyak sirip)
+    ctx.fillStyle = c.dark;
+    for(var a = 0; a < 12; a++){
+        var ang = (Math.PI * 2 / 12) * a;
+        var x1 = Math.cos(ang) * 45, y1 = Math.sin(ang) * 45;
+        var x2 = Math.cos(ang) * 75, y2 = Math.sin(ang) * 75;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x2 + Math.cos(ang + 0.4) * 10, y2 + Math.sin(ang + 0.4) * 10);
+        ctx.lineTo(x1 + Math.cos(ang + 0.4) * 8, y1 + Math.sin(ang + 0.4) * 8);
+        ctx.closePath(); ctx.fill();
+    }
+    // Cincin dalam
+    ctx.fillStyle = c.mid;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 25;
+    ctx.beginPath();
+    ctx.arc(0, 0, 42, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Cincin berputar
+    ctx.strokeStyle = c.accent;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, frameCount * 0.02, frameCount * 0.02 + Math.PI * 1.4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, frameCount * 0.02 + Math.PI, frameCount * 0.02 + Math.PI * 2.4);
+    ctx.stroke();
+    // Inti
+    var coreGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, 25);
+    coreGrad.addColorStop(0, '#ffffff');
+    coreGrad.addColorStop(0.4, c.light);
+    coreGrad.addColorStop(1, c.dark);
+    ctx.fillStyle = coreGrad;
+    ctx.shadowColor = c.accent; ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(0, 0, 25, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Inti dalam
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+/* Helper kokpit boss */
+function drawBossCockpit(e, c, x, y, rx, ry){
+    var canopyGrad = ctx.createRadialGradient(x - 2, y - 4, 1, x, y, rx + 2);
+    canopyGrad.addColorStop(0, '#fef3c7');
+    canopyGrad.addColorStop(0.5, c.cockpit);
+    canopyGrad.addColorStop(1, c.dark);
+    ctx.fillStyle = canopyGrad;
+    ctx.shadowColor = c.cockpit;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function nextWave(){ if(wave>=10){ return winGame(); } waveTransitioning=true; isPaused=true; SFX.levelUp(); var next=wave+1; showToast('🌊 WAVE '+next+'!'); setTimeout(function(){ wave=next; if(wave<=10){ resetWave(); isPaused=false; waveTransitioning=false; } },2000); }
+function gameOver(reason){ isRunning=false; clearInterval(gameLoop); SFX.gameOver(); overlay.classList.remove('hidden'); overlay.innerHTML='<div class="level-badge">WAVE '+wave+'</div><h1 class="dead">💀 GAME OVER</h1><p>'+(reason||'Coba lagi!')+'</p><p>Skor kamu:</p><div class="final-score">'+score+'</div><button id="restartBtn" type="button">🔄 MAIN LAGI</button>'; document.getElementById('restartBtn').addEventListener('click',initGame); saveScore(score); }
+function winGame(){ isRunning=false; clearInterval(gameLoop); SFX.win(); overlay.classList.remove('hidden'); overlay.innerHTML='<div class="level-badge">🏆 SEMUA WAVE SELESAI</div><h1 class="win">🏆 YOU WIN!</h1><p>Kamu menaklukkan 10 wave!</p><div class="final-score">'+score+'</div><button id="restartBtn" type="button">🔄 MAIN LAGI</button>'; document.getElementById('restartBtn').addEventListener('click',initGame); saveScore(score); }
+function saveScore(s){ if(s<=0) return; fetch('/api/scores',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({slug:'space-shooter',score:s}) }).then(function(r){return r.json();}).then(function(data){ if(data.status==='guest'){ showGuestNotice(s); } }).catch(function(){}); }
+function showGuestNotice(s){ var n=document.createElement('div'); n.style.cssText='position:fixed; top:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; padding:14px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:10000; box-shadow:0 8px 24px rgba(245,158,11,0.4);'; n.innerHTML='Login untuk simpan skor <strong>'+s+'</strong>! <a href="/login" style="color:#fff; text-decoration:underline;">Login</a>'; document.body.appendChild(n); setTimeout(function(){ n.remove(); },6000); }
+document.addEventListener('keydown',function(e){ var k=e.key.toLowerCase(); if(k===' '||k==='spacebar'){ e.preventDefault(); if(!isRunning) initGame(); else keys.fire=true; } if(k==='arrowleft'||k==='a') keys.left=true; if(k==='arrowright'||k==='d') keys.right=true; if(k==='p'&&isRunning){ isPaused=!isPaused; } });
+document.addEventListener('keyup',function(e){ var k=e.key.toLowerCase(); if(k===' '||k==='spacebar') keys.fire=false; if(k==='arrowleft'||k==='a') keys.left=false; if(k==='arrowright'||k==='d') keys.right=false; });
+document.getElementById('btnLeft').addEventListener('touchstart',function(e){ e.preventDefault(); keys.left=true; });
+document.getElementById('btnLeft').addEventListener('touchend',function(e){ e.preventDefault(); keys.left=false; });
+document.getElementById('btnRight').addEventListener('touchstart',function(e){ e.preventDefault(); keys.right=true; });
+document.getElementById('btnRight').addEventListener('touchend',function(e){ e.preventDefault(); keys.right=false; });
+document.getElementById('btnFire').addEventListener('touchstart',function(e){ e.preventDefault(); keys.fire=true; });
+document.getElementById('btnFire').addEventListener('touchend',function(e){ e.preventDefault(); keys.fire=false; });
+startBtn.addEventListener('click',initGame);
+fitCanvas();
+</script>
+</body>
+</html>

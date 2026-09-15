@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+{% block title %}{{ game.title }} - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .play-container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px 24px;
+    }
+
+    .play-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .play-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.3px;
+    }
+
+    .play-header .back-link {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 6px 14px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .play-header .back-link:hover {
+        background: #eef2ff;
+        text-decoration: underline;
+    }
+
+    /* ===== TIMER BAR GUEST ===== */
+    .guest-timer-bar {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 1px solid #fbbf24;
+        border-radius: 12px;
+        padding: 12px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+        animation: slideDown 0.4s ease;
+    }
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .guest-timer-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.95rem;
+        color: #92400e;
+        font-weight: 600;
+        flex-wrap: wrap;
+    }
+
+    .guest-timer-count {
+        font-family: 'Courier New', monospace;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #b45309;
+        background: #ffffff;
+        padding: 4px 12px;
+        border-radius: 8px;
+        border: 1px solid #fbbf24;
+        min-width: 66px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    .guest-timer-count.warning {
+        color: #dc2626;
+        border-color: #ef4444;
+        background: #fef2f2;
+        animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.08); }
+    }
+
+    .btn-login-timer {
+        padding: 9px 18px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        white-space: nowrap;
+    }
+    .btn-login-timer:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    }
+
+    /* ===== USER LOGIN BANNER ===== */
+    .user-banner {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border: 1px solid #6ee7b7;
+        border-radius: 12px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+        color: #065f46;
+        font-weight: 600;
+    }
+    .user-banner .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 8px #10b981;
+        animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0.4; }
+    }
+
+    /* ===== GAME FRAME ===== */
+    .game-iframe-wrapper {
+        position: relative;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+
+    .game-iframe-wrapper iframe {
+        width: 100%;
+        height: 640px;
+        border: 0;
+        border-radius: 10px;
+        display: block;
+        background: #0a0e27;
+    }
+
+    /* ===== OVERLAY WAKTU HABIS ===== */
+    .guest-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.88);
+        backdrop-filter: blur(10px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        padding: 20px;
+        animation: fadeIn 0.3s ease;
+    }
+    .guest-overlay.show { display: flex; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    .guest-overlay-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 40px 36px;
+        max-width: 460px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        position: relative;
+        overflow: hidden;
+        animation: popUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popUp {
+        from { transform: scale(0.85) translateY(20px); opacity: 0; }
+        to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .guest-overlay-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #f59e0b, #ef4444);
+    }
+
+    .overlay-icon {
+        font-size: 4rem;
+        margin-bottom: 16px;
+        animation: shake 0.8s ease-in-out;
+    }
+    @keyframes shake {
+        0%, 100% { transform: rotate(0); }
+        25%      { transform: rotate(-10deg); }
+        75%      { transform: rotate(10deg); }
+    }
+
+    .guest-overlay-card h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+        letter-spacing: -0.3px;
+    }
+
+    .guest-overlay-card p {
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 24px;
+        font-size: 0.95rem;
+    }
+
+    .overlay-benefits {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .overlay-benefits .benefit {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        font-size: 0.9rem;
+        color: #334155;
+        font-weight: 500;
+    }
+    .overlay-benefits .benefit span:first-child {
+        font-size: 1.2rem;
+        width: 24px;
+        text-align: center;
+    }
+
+    .overlay-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-login-overlay {
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff !important;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+    .btn-login-overlay:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.5);
+    }
+
+    .btn-register-overlay {
+        padding: 12px 28px;
+        background: #ffffff;
+        color: #4f46e5 !important;
+        border: 2px solid #4f46e5;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+    .btn-register-overlay:hover {
+        background: #4f46e5;
+        color: #ffffff !important;
+    }
+
+    @media (max-width: 600px) {
+        .play-container { padding: 16px; }
+        .play-header h1 { font-size: 1.15rem; }
+        .game-iframe-wrapper iframe { height: 500px; }
+        .guest-overlay-card { padding: 30px 24px; }
+        .guest-overlay-card h2 { font-size: 1.3rem; }
+        .overlay-icon { font-size: 3rem; }
+        .guest-timer-info { font-size: 0.85rem; }
+        .guest-timer-count { font-size: 1.1rem; min-width: 56px; }
+    }
+</style>
+
+<div class="play-container">
+
+    <!-- ===== HEADER ===== -->
+    <div class="play-header">
+        <h1>🎮 {{ game.title }}</h1>
+        <a href="/game/{{ game.slug }}" class="back-link">← Kembali ke Detail</a>
+    </div>
+
+    <!-- ===== BANNER USER LOGIN ===== -->
+    {% if logged_in %}
+    <div class="user-banner">
+        <span class="dot"></span>
+        <span>Main tanpa batas sebagai <strong>{{ user }}</strong></span>
+    </div>
+    {% endif %}
+
+    <!-- ===== TIMER BAR GUEST ===== -->
+    {% if guest_mode %}
+    <div class="guest-timer-bar" id="guestTimerBar">
+        <div class="guest-timer-info">
+            <span>⏰ Mode Tamu</span>
+            <span class="guest-timer-count" id="timerDisplay">{{ time_left }}s</span>
+            <span style="font-size:0.85rem; opacity:0.85;">Sisa waktu main</span>
+        </div>
+        <a href="/login?next=/play/{{ game.slug }}" class="btn-login-timer">🔑 Login untuk main tanpa batas</a>
+    </div>
+    {% endif %}
+
+    <!-- ===== IFRAME GAME ===== -->
+    <div class="game-iframe-wrapper">
+        <iframe
+            id="gameIframe"
+            src="{{ game.embed_url }}"
+            scrolling="no"
+            allow="autoplay; fullscreen">
+        </iframe>
+    </div>
+
+</div>
+
+<!-- ===== OVERLAY WAKTU HABIS ===== -->
+{% if guest_mode %}
+<div class="guest-overlay" id="timeoutOverlay">
+    <div class="guest-overlay-card">
+        <div class="overlay-icon">⏰</div>
+        <h2>Waktu Coba Habis!</h2>
+        <p>
+            Kamu sudah mencoba <strong>{{ game.title }}</strong> selama {{ total_time }} detik sebagai tamu.
+            Login untuk lanjut main tanpa batas!
+        </p>
+
+        <div class="overlay-benefits">
+            <div class="benefit"><span>♾️</span><span>Main tanpa batas waktu</span></div>
+            <div class="benefit"><span>🏆</span><span>Skor tersimpan di leaderboard</span></div>
+            <div class="benefit"><span>💾</span><span>Progress & pencapaian tersimpan</span></div>
+            <div class="benefit"><span>🎮</span><span>Akses semua game tanpa batas</span></div>
+        </div>
+
+        <div class="overlay-buttons">
+            <a href="/login?next=/play/{{ game.slug }}" class="btn-login-overlay">🔑 Login Sekarang</a>
+            <a href="/register" class="btn-register-overlay">✨ Daftar Gratis</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== SCRIPT TIMER ===== -->
+{% if guest_mode %}
+<script>
+    (function() {
+        var timeLeft = {{ time_left }};
+        var timerDisplay = document.getElementById('timerDisplay');
+        var overlay = document.getElementById('timeoutOverlay');
+        var gameIframe = document.getElementById('gameIframe');
+        var intervalId = null;
+
+        function tick() {
+            if (timeLeft <= 0) {
+                clearInterval(intervalId);
+                showTimeoutOverlay();
+                return;
+            }
+
+            timeLeft--;
+            timerDisplay.textContent = timeLeft + 's';
+
+            if (timeLeft <= 30) {
+                timerDisplay.classList.add('warning');
+            }
+        }
+
+        function showTimeoutOverlay() {
+            overlay.classList.add('show');
+
+            // Coba pause game via postMessage
+            try {
+                gameIframe.contentWindow.postMessage({ type: 'PAUSE_GAME' }, '*');
+            } catch (e) {}
+
+            // Fallback: reload iframe ke halaman kosong
+            setTimeout(function() {
+                try {
+                    gameIframe.src = 'about:blank';
+                } catch (e) {}
+            }, 500);
+        }
+
+        // Warning kalau sisa <= 30 detik
+        if (timeLeft <= 30) {
+            timerDisplay.classList.add('warning');
+        }
+
+        // Mulai interval
+        intervalId = setInterval(tick, 1000);
+    })();
+</script>
+{% endif %}
+
+{% endblock %}

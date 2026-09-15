@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .leaderboard-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .leaderboard-header h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .leaderboard-header p {
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* ===== GRID ===== */
+    .leaderboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+    }
+
+    /* ===== CARD ===== */
+    .lb-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.25s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    .lb-card:hover {
+        transform: translateY(-4px);
+        border-color: #c7d2fe;
+        box-shadow: 0 12px 32px rgba(79, 70, 229, 0.12);
+    }
+
+    /* Header card */
+    .lb-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    }
+    .lb-card-emoji {
+        font-size: 2.2rem;
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        flex-shrink: 0;
+    }
+    .lb-card-title-block {
+        flex: 1;
+        min-width: 0;
+    }
+    .lb-card-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .lb-card-subtitle {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* List skor */
+    .lb-list {
+        padding: 8px 0;
+        flex: 1;
+    }
+
+    .lb-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        transition: background 0.2s;
+        position: relative;
+    }
+    .lb-row:hover {
+        background: #f8fafc;
+    }
+
+    /* Rank */
+    .lb-rank {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        background: #f1f5f9;
+        color: #64748b;
+        flex-shrink: 0;
+    }
+    .lb-rank.rank-1 {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+    }
+    .lb-rank.rank-2 {
+        background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(148, 163, 184, 0.4);
+    }
+    .lb-rank.rank-3 {
+        background: linear-gradient(135deg, #fb923c, #ea580c);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+    }
+
+    /* Username */
+    .lb-username {
+        flex: 1;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .lb-username.is-me {
+        color: #4f46e5;
+    }
+    .lb-username .me-tag {
+        background: #eef2ff;
+        color: #4f46e5;
+        font-size: 0.65rem;
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    /* Skor */
+    .lb-score {
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #4f46e5;
+        flex-shrink: 0;
+        text-align: right;
+        min-width: 70px;
+    }
+    .lb-score small {
+        display: block;
+        font-size: 0.65rem;
+        color: #94a3b8;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3px;
+        margin-top: 1px;
+    }
+
+    /* Empty state per card */
+    .lb-empty {
+        padding: 32px 20px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    .lb-empty .empty-emoji {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 8px;
+        opacity: 0.5;
+    }
+
+    /* Footer card */
+    .lb-card-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #f1f5f9;
+        background: #f8fafc;
+        text-align: center;
+    }
+    .lb-play-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #4f46e5;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: all 0.2s;
+    }
+    .lb-play-link:hover {
+        color: #7c3aed;
+        gap: 10px;
+    }
+
+    /* ===== GLOBAL EMPTY ===== */
+    .global-empty {
+        text-align: center;
+        padding: 80px 20px;
+        color: #64748b;
+        background: #ffffff;
+        border: 2px dashed #e2e8f0;
+        border-radius: 16px;
+    }
+    .global-empty .big-emoji {
+        font-size: 4rem;
+        margin-bottom: 16px;
+        display: block;
+    }
+    .global-empty h3 {
+        font-size: 1.3rem;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+    .global-empty p {
+        font-size: 0.95rem;
+        color: #94a3b8;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+        .leaderboard-header h1 { font-size: 1.6rem; }
+        .leaderboard-grid { grid-template-columns: 1fr; gap: 16px; }
+        .lb-card-header { padding: 14px 16px; }
+        .lb-row { padding: 8px 16px; }
+        .lb-card-footer { padding: 10px 16px; }
+        .lb-score { font-size: 0.9rem; min-width: 60px; }
+    }
+</style>
+
+<!-- ===== HEADER ===== -->
+<div class="leaderboard-header">
+    <h1>🏆 Leaderboard</h1>
+    <p>Top 10 pemain terbaik di setiap game · Kalahkan mereka!</p>
+</div>
+
+<!-- ===== GRID LEADERBOARD ===== -->
+{% if leaderboards %}
+<div class="leaderboard-grid">
+    {% for slug, data in leaderboards.items() %}
+
+    {# Mapping emoji & gradient per game #}
+    {% set emoji_map = {
+        'snake': '🐍',
+        'breakout': '🧱',
+        'tetris': '🎮',
+        'flappy-bird': '🐦',
+        '2048': '🔢',
+        'pacman': '👻',
+        'minesweeper': '💣',
+        'memory-card': '🃏'
+    } %}
+
+    <div class="lb-card">
+        <div class="lb-card-header">
+            <div class="lb-card-emoji">{{ emoji_map.get(slug, '🎮') }}</div>
+            <div class="lb-card-title-block">
+                <div class="lb-card-title">{{ data.title }}</div>
+                <div class="lb-card-subtitle">
+                    {% if data.rows %}
+                        {{ data.rows|length }} pemain · Top skor {{ data.rows[0][0].score }}
+                    {% else %}
+                        Belum ada skor
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="lb-list">
+            {% if data.rows %}
+                {% for row in data.rows %}
+                    {% set s = row[0] %}
+                    {% set username = row[1] %}
+                    <div class="lb-row">
+                        <div class="lb-rank {% if loop.index <= 3 %}rank-{{ loop.index }}{% endif %}">
+                            {% if loop.index == 1 %}🥇
+                            {% elif loop.index == 2 %}🥈
+                            {% elif loop.index == 3 %}🥉
+                            {% else %}{{ loop.index }}
+                            {% endif %}
+                        </div>
+                        <div class="lb-username {% if user and username == user %}is-me{% endif %}">
+                            {{ username or 'Guest' }}
+                            {% if user and username == user %}
+                                <span class="me-tag">KAMU</span>
+                            {% endif %}
+                        </div>
+                        <div class="lb-score">
+                            {{ s.score }}
+                            <small>{{ s.created_at.strftime('%d %b') if s.created_at else '-' }}</small>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="lb-empty">
+                    <span class="empty-emoji">📭</span>
+                    Belum ada yang main. Jadi yang pertama!
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="lb-card-footer">
+            <a href="/play/{{ slug }}" class="lb-play-link">
+                ▶ Mainkan Sekarang
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="global-empty">
+    <span class="big-emoji">🏆</span>
+    <h3>Leaderboard Kosong</h3>
+    <p>Belum ada game yang terdaftar. Tambahkan game dulu di dashboard admin.</p>
+</div>
+{% endif %}
+
+{% endblock %}

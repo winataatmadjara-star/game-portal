@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Katalog Game - GamePortal{% endblock %}
+
+{% block content %}
+
+{# =====================================================
+   MAPPING THUMBNAIL PER GAME (emoji + gradient)
+   ===================================================== #}
+{% set game_visuals = {
+    'snake': {
+        'emoji': '🐍',
+        'gradient': 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 50%, #6ee7b7 100%)'
+    },
+    'breakout': {
+        'emoji': '🧱',
+        'gradient': 'linear-gradient(135deg, #fed7aa 0%, #fdba74 50%, #fb923c 100%)'
+    },
+    'tetris': {
+        'emoji': '🎮',
+        'gradient': 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 50%, #a78bfa 100%)'
+    },
+    'flappy-bird': {
+        'emoji': '🐦',
+        'gradient': 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 50%, #67e8f9 100%)'
+    },
+    '2048': {
+        'emoji': '🔢',
+        'gradient': 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)'
+    },
+    'pacman': {
+        'emoji': '👻',
+        'gradient': 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)'
+    },
+    'minesweeper': {
+        'emoji': '💣',
+        'gradient': 'linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%)'
+    },
+    'memory-card': {
+        'emoji': '🃏',
+        'gradient': 'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%)'
+    },
+    'space-shooter': {
+        'emoji': '🚀',
+        'gradient': 'linear-gradient(135deg, #cffafe 0%, #67e8f9 50%, #0891b2 100%)'
+    },
+    'ninja-runner': {
+        'emoji': '🥷',
+        'gradient': 'linear-gradient(135deg, #fee2e2 0%, #fca5a5 50%, #ef4444 100%)'
+    },
+    'geo-explorer': {
+        'emoji': '🌍',
+        'gradient': 'linear-gradient(135deg, #d1fae5 0%, #67e8f9 50%, #0ea5e9 100%)'
+    }
+} %}
+
+<div class="catalog-header">
+    <div>
+        <h1>🎮 Katalog Game</h1>
+        <p>{{ games|length }} game tersedia · Pilih dan mainkan langsung di browser!</p>
+    </div>
+</div>
+
+{% if categories %}
+<div class="category-filter">
+    <a href="/" class="{% if not current_category %}active{% endif %}">🎯 Semua</a>
+    {% for cat in categories %}
+        <a href="/?category={{ cat }}" class="{% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if games %}
+<div class="game-grid">
+    {% for g in games %}
+        {% set visual = game_visuals.get(g.slug, {'emoji': '🎮', 'gradient': 'linear-gradient(135deg, #e2e8f0, #cbd5e1)'}) %}
+        <a href="{{ url_for('web.game_detail_page', game_slug=g.slug) }}" class="game-card">
+            <div class="game-thumbnail" style="background: {{ visual.gradient }};">
+                {% if g.thumbnail %}
+                    <img src="{{ g.thumbnail }}" alt="{{ g.title }}" loading="lazy">
+                {% else %}
+                    <span class="emoji-big">{{ visual.emoji }}</span>
+                {% endif %}
+                <span class="game-category">{{ g.category }}</span>
+                <span class="play-badge">▶</span>
+            </div>
+
+            <div class="game-info">
+                <div class="game-title">{{ g.title }}</div>
+                {% if g.description %}
+                    <div class="game-desc">{{ g.description }}</div>
+                {% endif %}
+                <div class="game-meta">
+                    <span>👁 {{ g.views or 0 }}</span>
+                    <span>🎯 Main</span>
+                </div>
+            </div>
+        </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>📭 Belum ada game</h3>
+    <p>Jalankan <code>python seed.py</code> untuk menambahkan game.</p>
+</div>
+{% endif %}
+
+{% endblock %}

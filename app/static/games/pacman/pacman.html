@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pac-Man Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+html, body {
+    width: 100%; height: 100%; overflow: hidden; position: fixed;
+    background: #000; color: #fff; touch-action: none;
+}
+body { display: flex; justify-content: center; align-items: center; }
+
+.game-container {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 8px; width: 100%; height: 100%;
+}
+
+.title {
+    font-size: 1.3rem; font-weight: 800;
+    color: #ffff00;
+    letter-spacing: 3px; text-transform: uppercase;
+    text-shadow: 0 0 10px #ffff00, 0 0 20px #ffaa00;
+    font-family: 'Courier New', monospace;
+}
+
+/* ===== HUD ===== */
+.hud {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 500px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 8px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    border: 2px solid #2121de;
+    box-shadow: 0 0 20px rgba(33, 33, 222, 0.4);
+    font-family: 'Courier New', monospace;
+}
+.hud-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hud-label { font-size: 9px; color: #8888ff; text-transform: uppercase; letter-spacing: 1px; }
+.hud-value { font-size: 15px; font-weight: 700; }
+.hud .score  .hud-value { color: #ffff00; }
+.hud .best   .hud-value { color: #00ff00; }
+.hud .level  .hud-value { color: #00ffff; }
+.hud .lives  .hud-value { color: #ff0000; }
+
+.level-progress {
+    width: 100%; max-width: 500px; height: 5px;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 3px; overflow: hidden;
+    border: 1px solid #2121de;
+}
+.level-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #ffff00, #ff8800);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px #ffff00;
+}
+
+.canvas-wrapper {
+    position: relative; display: inline-block;
+    border: 3px solid #2121de;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(33, 33, 222, 0.5);
+    background: #000;
+}
+
+canvas {
+    display: block;
+    background: #000;
+    touch-action: none;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* ===== OVERLAY ===== */
+.overlay {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.92);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 20px;
+    z-index: 10;
+    animation: popIn 0.3s ease;
+}
+@keyframes popIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.overlay.hidden { display: none; }
+
+.overlay h1 {
+    font-size: 2rem; margin-bottom: 12px;
+    color: #ffff00;
+    letter-spacing: 3px;
+    text-shadow: 0 0 15px #ffff00, 0 0 30px #ff8800;
+    font-family: 'Courier New', monospace;
+}
+.overlay h1.dead { color: #ff0000; text-shadow: 0 0 15px #ff0000; }
+.overlay h1.win  { color: #00ff00; text-shadow: 0 0 15px #00ff00; }
+
+.overlay p {
+    margin-bottom: 6px; font-size: 13px;
+    color: #cbd5e1; line-height: 1.5;
+    max-width: 340px;
+    font-family: 'Courier New', monospace;
+}
+
+.overlay .final-score {
+    font-size: 2.2rem; font-weight: 800; color: #ffff00;
+    margin: 12px 0;
+    text-shadow: 0 0 20px #ffff00;
+    font-family: 'Courier New', monospace;
+}
+
+.overlay button {
+    padding: 12px 32px;
+    background: #ffff00;
+    color: #000; border: 3px solid #ff8800; border-radius: 10px;
+    font-size: 15px; font-weight: 900; cursor: pointer;
+    margin-top: 10px; transition: all 0.2s;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    box-shadow: 0 0 20px rgba(255, 255, 0, 0.5);
+}
+.overlay button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 255, 0, 0.8);
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    background: rgba(33, 33, 222, 0.3);
+    border: 2px solid #2121de;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #8888ff;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+}
+
+.level-toast {
+    position: fixed; top: 18%; left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: #ffff00;
+    color: #000; padding: 14px 28px; border-radius: 12px;
+    font-size: 16px; font-weight: 900; letter-spacing: 3px;
+    z-index: 100; box-shadow: 0 0 40px #ffff00;
+    pointer-events: none; text-align: center;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    border: 3px solid #ff8800;
+}
+.level-toast.show { animation: toastPop 2s ease forwards; }
+@keyframes toastPop {
+    0%   { transform: translateX(-50%) scale(0);   opacity: 0; }
+    15%  { transform: translateX(-50%) scale(1.2); opacity: 1; }
+    25%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+    85%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+}
+
+/* ===== MOBILE CONTROLS ===== */
+.controls-mobile {
+    display: none;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(2, 60px);
+    gap: 8px;
+    margin-top: 4px;
+}
+.controls-mobile button {
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffff00;
+    border: 2px solid #ffff00;
+    border-radius: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
+}
+.controls-mobile button:active {
+    background: #ffff00;
+    color: #000;
+    transform: scale(0.92);
+}
+.controls-mobile .btn-up    { grid-column: 2; grid-row: 1; }
+.controls-mobile .btn-left  { grid-column: 1; grid-row: 2; }
+.controls-mobile .btn-down  { grid-column: 2; grid-row: 2; }
+.controls-mobile .btn-right { grid-column: 3; grid-row: 2; }
+
+@media (max-width: 600px) {
+    .title { font-size: 1rem; letter-spacing: 1px; }
+    .hud { max-width: 96vw; font-size: 11px; padding: 6px 10px; }
+    .hud-value { font-size: 13px; }
+    .controls-mobile { display: grid; }
+    .overlay h1 { font-size: 1.5rem; }
+    .overlay .final-score { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="title">👻 PAC-MAN</div>
+
+    <div class="hud">
+        <div class="hud-item score">
+            <span class="hud-label">Score</span>
+            <span class="hud-value" id="score">0</span>
+        </div>
+        <div class="hud-item best">
+            <span class="hud-label">Best</span>
+            <span class="hud-value" id="best">0</span>
+        </div>
+        <div class="hud-item level">
+            <span class="hud-label">Level</span>
+            <span class="hud-value" id="levelDisplay">1/10</span>
+        </div>
+        <div class="hud-item lives">
+            <span class="hud-label">Lives</span>
+            <span class="hud-value" id="lives">❤❤❤</span>
+        </div>
+    </div>
+
+    <div class="level-progress">
+        <div class="level-progress-fill" id="levelProgress"></div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="560" height="620"></canvas>
+
+        <div id="overlay" class="overlay">
+            <div class="level-badge" id="levelBadge">LEVEL 1</div>
+            <h1>👻 PAC-MAN</h1>
+            <p><strong>10 Level</strong> dengan labirin berbeda!</p>
+            <p>Makan semua titik · Hindari hantu</p>
+            <p>Arrow Keys / WASD / Swipe</p>
+            <button id="startBtn" type="button">▶ MULAI</button>
+        </div>
+    </div>
+
+    <div class="controls-mobile">
+        <button type="button" class="btn-up"    data-dir="up">▲</button>
+        <button type="button" class="btn-left"  data-dir="left">◀</button>
+        <button type="button" class="btn-down"  data-dir="down">▼</button>
+        <button type="button" class="btn-right" data-dir="right">▶</button>
+    </div>
+</div>
+
+<div id="toast" class="level-toast"></div>
+
+<script>
+// ============================================================
+// PAC-MAN ADVENTURE - 10 Level
+// ============================================================
+
+var canvas = document.getElementById('gameCanvas');
+var ctx = canvas.getContext('2d');
+var scoreEl = document.getElementById('score');
+var bestEl = document.getElementById('best');
+var levelDisplay = document.getElementById('levelDisplay');
+var livesEl = document.getElementById('lives');
+var levelProgress = document.getElementById('levelProgress');
+var overlay = document.getElementById('overlay');
+var levelBadge = document.getElementById('levelBadge');
+var startBtn = document.getElementById('startBtn');
+var toast = document.getElementById('toast');
+
+// Grid: 28 kolom x 31 baris (klasik Pac-Man)
+var COLS = 28;
+var ROWS = 31;
+var CELL = 20;
+var W = COLS * CELL;  // 560
+var H = ROWS * CELL;  // 620
+
+var grid, pacman, ghosts, dotsLeft, totalDots;
+var score = 0, lives = 3, currentLevel = 1, bestScore = 0;
+var isRunning = false, isPaused = false, levelTransitioning = false;
+var gameLoop, frameCount = 0;
+var powerModeTimer = 0;
+var mouthAnim = 0;
+var deathAnim = 0;
+var isDying = false;
+
+// ============================================================
+// 10 MAZE - tiap maze punya layout berbeda
+// ============================================================
+// Simbol: '#' = dinding, '.' = titik kecil, 'o' = power pellet, ' ' = kosong, 'P' = start pacman, 'G' = start ghost
+
+var MAZES = [
+// LEVEL 1 - maze klasik terbuka
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 2 - lebih banyak lorong buntu
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 3 - maze simetris dengan lebih banyak jalur
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 4 - maze asimetris
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 5
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 6
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 7
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 8
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 9
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #....      ",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+],
+// LEVEL 10 - MASTER
+[
+"############################",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#o####.#####.##.#####.####o#",
+"#.####.#####.##.#####.####.#",
+"#..........................#",
+"#.####.##.########.##.####.#",
+"#.####.##.########.##.####.#",
+"#......##....##....##......#",
+"######.#####.##.#####.######",
+"     #.#####.##.#####.#     ",
+"     #.##..........##.#     ",
+"     #.##.###GG###.##.#     ",
+"######.##.#      #.##.######",
+"      ....#      #.##.######",
+"######.##.#      #.##.######",
+"     #.##.########.##.#     ",
+"     #.##..........##.#     ",
+"     #.##.########.##.#     ",
+"######.##.########.##.######",
+"#............##............#",
+"#.####.#####.##.#####.####.#",
+"#.####.#####.##.#####.####.#",
+"#o..##.......P .......##..o#",
+"###.##.##.########.##.##.###",
+"###.##.##.########.##.##.###",
+"#......##....##....##......#",
+"#.##########.##.##########.#",
+"#.##########.##.##########.#",
+"#..........................#",
+"############################"
+]
+];
+
+// Kecepatan & jumlah hantu per level
+var LEVEL_CONFIG = [
+    { pacSpeed: 2.0, ghostSpeed: 1.5, ghostCount: 2, powerDuration: 300 },  // L1
+    { pacSpeed: 2.0, ghostSpeed: 1.6, ghostCount: 2, powerDuration: 280 },  // L2
+    { pacSpeed: 2.2, ghostSpeed: 1.7, ghostCount: 3, powerDuration: 260 },  // L3
+    { pacSpeed: 2.2, ghostSpeed: 1.8, ghostCount: 3, powerDuration: 240 },  // L4
+    { pacSpeed: 2.4, ghostSpeed: 1.9, ghostCount: 3, powerDuration: 220 },  // L5
+    { pacSpeed: 2.4, ghostSpeed: 2.0, ghostCount: 4, powerDuration: 200 },  // L6
+    { pacSpeed: 2.6, ghostSpeed: 2.1, ghostCount: 4, powerDuration: 180 },  // L7
+    { pacSpeed: 2.6, ghostSpeed: 2.2, ghostCount: 4, powerDuration: 160 },  // L8
+    { pacSpeed: 2.8, ghostSpeed: 2.3, ghostCount: 4, powerDuration: 140 },  // L9
+    { pacSpeed: 3.0, ghostSpeed: 2.5, ghostCount: 5, powerDuration: 120 }   // L10
+];
+
+var GHOST_COLORS = ['#ff0000', '#ffb8ff', '#00ffff', '#ffb852', '#00ff00'];
+var GHOST_NAMES  = ['Blinky', 'Pinky', 'Inky', 'Clyde', 'Sue'];
+
+// ============================================================
+// AUDIO
+// ============================================================
+var audioCtx = null;
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { audioCtx = null; }
+    }
+}
+function playSound(freq, duration, type, volume) {
+    type = type || 'square';
+    volume = volume || 0.05;
+    if (!audioCtx) return;
+    try {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = volume;
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+}
+
+var SFX = {
+    dot: function() { playSound(440, 0.04, 'square', 0.03); },
+    power: function() { playSound(220, 0.1, 'square', 0.06); },
+    eatGhost: function() { [523, 659, 784].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.08); }, i * 60); }); },
+    death: function() { [400, 300, 250, 200, 150].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.15, 'sawtooth', 0.08); }, i * 100); }); },
+    levelUp: function() { [523, 659, 784, 1047].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.15); }, i * 100); }); },
+    win: function() { [523, 659, 784, 1047, 1319].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.2); }, i * 130); }); }
+};
+
+// ============================================================
+// FIT CANVAS
+// ============================================================
+function fitCanvas() {
+    var maxW = Math.min(window.innerWidth - 30, 560);
+    var maxH = Math.min(window.innerHeight - 200, 620);
+    var ratio = W / H;
+    var cw = maxW;
+    var ch = cw / ratio;
+    if (ch > maxH) { ch = maxH; cw = ch * ratio; }
+    canvas.style.width = cw + 'px';
+    canvas.style.height = ch + 'px';
+}
+window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', function() { setTimeout(fitCanvas, 200); });
+
+// ============================================================
+// HIGH SCORE
+// ============================================================
+function loadBest() {
+    bestScore = parseInt(localStorage.getItem('pacman_best') || '0', 10);
+    bestEl.textContent = bestScore;
+}
+function saveBest() {
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('pacman_best', bestScore);
+        bestEl.textContent = bestScore;
+    }
+}
+
+// ============================================================
+// LEVEL HELPERS
+// ============================================================
+function getLevelConfig() {
+    return LEVEL_CONFIG[Math.min(currentLevel - 1, LEVEL_CONFIG.length - 1)];
+}
+
+function updateLevelUI() {
+    levelDisplay.textContent = currentLevel + '/10';
+    levelBadge.textContent = 'LEVEL ' + currentLevel;
+    var pct = (1 - dotsLeft / totalDots) * 100;
+    levelProgress.style.width = pct + '%';
+}
+
+function updateLivesUI() {
+    livesEl.textContent = '❤'.repeat(Math.max(0, lives));
+}
+
+function showToast(text) {
+    toast.textContent = text;
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+}
+
+// ============================================================
+// BUILD MAZE
+// ============================================================
+function buildMaze() {
+    var layout = MAZES[Math.min(currentLevel - 1, MAZES.length - 1)];
+    grid = [];
+    totalDots = 0;
+    var pacStart = { x: 14, y: 23 };
+    var ghostStarts = [];
+
+    for (var r = 0; r < ROWS; r++) {
+        var row = [];
+        for (var c = 0; c < COLS; c++) {
+            var ch = layout[r][c];
+            if (ch === '#') row.push(1);
+            else if (ch === '.') { row.push(2); totalDots++; }
+            else if (ch === 'o') { row.push(3); totalDots++; }
+            else if (ch === 'P') { pacStart = { x: c, y: r }; row.push(0); }
+            else if (ch === 'G') { ghostStarts.push({ x: c, y: r }); row.push(0); }
+            else row.push(0);
+        }
+        grid.push(row);
+    }
+
+    dotsLeft = totalDots;
+
+    pacman = {
+        x: pacStart.x,
+        y: pacStart.y,
+        px: pacStart.x * CELL + CELL / 2,
+        py: pacStart.y * CELL + CELL / 2,
+        dir: { x: 0, y: 0 },
+        nextDir: { x: 0, y: 0 },
+        speed: getLevelConfig().pacSpeed,
+        mouthOpen: 1
+    };
+
+    ghosts = [];
+    var count = getLevelConfig().ghostCount;
+    for (var i = 0; i < count; i++) {
+        var gs = ghostStarts[i % ghostStarts.length] || { x: 13, y: 12 };
+        ghosts.push({
+            id: i,
+            name: GHOST_NAMES[i % GHOST_NAMES.length],
+            color: GHOST_COLORS[i % GHOST_COLORS.length],
+            x: gs.x,
+            y: gs.y,
+            px: gs.x * CELL + CELL / 2,
+            py: gs.y * CELL + CELL / 2,
+            dir: { x: (Math.random() > 0.5 ? 1 : -1), y: 0 },
+            speed: getLevelConfig().ghostSpeed,
+            scared: false,
+            eaten: false,
+            canChangeDir: true
+        });
+    }
+
+    updateLevelUI();
+}
+
+// ============================================================
+// INIT GAME
+// ============================================================
+function initGame() {
+    initAudio();
+    currentLevel = 1;
+    score = 0;
+    lives = 3;
+    frameCount = 0;
+    isDying = false;
+    deathAnim = 0;
+
+    scoreEl.textContent = '0';
+    updateLivesUI();
+    loadBest();
+
+    buildMaze();
+    overlay.classList.add('hidden');
+
+    isRunning = true;
+    isPaused = false;
+    levelTransitioning = false;
+
+    clearInterval(gameLoop);
+    gameLoop = setInterval(update, 1000 / 60);
+    draw();
+}
+
+// ============================================================
+// CHECK WALL
+// ============================================================
+function isWall(x, y) {
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return true;
+    return grid[y][x] === 1;
+}
+
+function canMoveTo(cx, cy, dir) {
+    var nx = cx + dir.x;
+    var ny = cy + dir.y;
+    return !isWall(nx, ny);
+}
+
+// ============================================================
+// UPDATE
+// ============================================================
+function update() {
+    if (!isRunning || isPaused || levelTransitioning) return;
+    frameCount++;
+    mouthAnim += 0.15;
+
+    if (isDying) {
+        deathAnim++;
+        if (deathAnim > 60) {
+            isDying = false;
+            deathAnim = 0;
+            if (lives <= 0) {
+                gameOver('Kehabisan nyawa!');
+            } else {
+                respawn();
+            }
+        }
+        draw();
+        return;
+    }
+
+    updatePacman();
+    updateGhosts();
+    updatePowerMode();
+    checkCollisions();
+    checkLevelComplete();
+
+    draw();
+}
+
+// ============================================================
+// PACMAN MOVEMENT
+// ============================================================
+function updatePacman() {
+    var cfg = getLevelConfig();
+    var speed = powerModeTimer > 0 ? cfg.pacSpeed + 0.5 : cfg.pacSpeed;
+
+    // Coba ganti arah ke nextDir
+    if (pacman.nextDir.x !== 0 || pacman.nextDir.y !== 0) {
+        if (canMoveTo(pacman.x, pacman.y, pacman.nextDir)) {
+            pacman.dir = { x: pacman.nextDir.x, y: pacman.nextDir.y };
+        }
+    }
+
+    // Gerak smooth
+    var targetX = pacman.x * CELL + CELL / 2;
+    var targetY = pacman.y * CELL + CELL / 2;
+
+    pacman.px += pacman.dir.x * speed;
+    pacman.py += pacman.dir.y * speed;
+
+    // Sampai di pusat cell, cek nextDir lagi
+    if (pacman.dir.x !== 0) {
+        if ((pacman.dir.x > 0 && pacman.px >= targetX) || (pacman.dir.x < 0 && pacman.px <= targetX)) {
+            pacman.px = targetX;
+            pacman.py = targetY;
+
+            // Cek apakah bisa lanjut
+            if (!canMoveTo(pacman.x, pacman.y, pacman.dir)) {
+                pacman.dir = { x: 0, y: 0 };
+            } else {
+                pacman.x += pacman.dir.x;
+            }
+
+            // Cek nextDir
+            if ((pacman.nextDir.x !== 0 || pacman.nextDir.y !== 0) && canMoveTo(pacman.x - (pacman.dir.x || 0), pacman.y - (pacman.dir.y || 0), pacman.nextDir)) {
+                // handled at top
+            }
+        }
+    } else if (pacman.dir.y !== 0) {
+        if ((pacman.dir.y > 0 && pacman.py >= targetY) || (pacman.dir.y < 0 && pacman.py <= targetY)) {
+            pacman.px = targetX;
+            pacman.py = targetY;
+
+            if (!canMoveTo(pacman.x, pacman.y, pacman.dir)) {
+                pacman.dir = { x: 0, y: 0 };
+            } else {
+                pacman.y += pacman.dir.y;
+            }
+        }
+    }
+
+    // Wrap-around (terowongan)
+    if (pacman.px < -CELL / 2) { pacman.px = W + CELL / 2; pacman.x = COLS - 1; }
+    if (pacman.px > W + CELL / 2) { pacman.px = -CELL / 2; pacman.x = 0; }
+
+    // Makan dot
+    var gx = Math.round(pacman.px / CELL - 0.5);
+    var gy = Math.round(pacman.py / CELL - 0.5);
+    if (gx >= 0 && gx < COLS && gy >= 0 && gy < ROWS) {
+        if (grid[gy][gx] === 2) {
+            grid[gy][gx] = 0;
+            dotsLeft--;
+            score += 10;
+            scoreEl.textContent = score;
+            SFX.dot();
+            updateLevelUI();
+        } else if (grid[gy][gx] === 3) {
+            grid[gy][gx] = 0;
+            dotsLeft--;
+            score += 50;
+            scoreEl.textContent = score;
+            powerModeTimer = getLevelConfig().powerDuration;
+            SFX.power();
+            ghosts.forEach(function(g) { g.scared = true; g.eaten = false; });
+            updateLevelUI();
+        }
+    }
+}
+
+// ============================================================
+// GHOST MOVEMENT
+// ============================================================
+function updateGhosts() {
+    ghosts.forEach(function(g) {
+        var speed = g.scared ? g.speed * 0.5 : g.speed;
+
+        if (g.eaten) {
+            // Kembali ke sarang dengan cepat
+            speed = g.speed * 2;
+        }
+
+        var targetX = g.x * CELL + CELL / 2;
+        var targetY = g.y * CELL + CELL / 2;
+
+        g.px += g.dir.x * speed;
+        g.py += g.dir.y * speed;
+
+        var reachedCenter = false;
+        if (g.dir.x !== 0) {
+            if ((g.dir.x > 0 && g.px >= targetX) || (g.dir.x < 0 && g.px <= targetX)) {
+                g.px = targetX;
+                g.py = targetY;
+                g.x += g.dir.x;
+                reachedCenter = true;
+            }
+        } else if (g.dir.y !== 0) {
+            if ((g.dir.y > 0 && g.py >= targetY) || (g.dir.y < 0 && g.py <= targetY)) {
+                g.px = targetX;
+                g.py = targetY;
+                g.y += g.dir.y;
+                reachedCenter = true;
+            }
+        }
+
+        // Wrap-around
+        if (g.px < -CELL / 2) { g.px = W + CELL / 2; g.x = COLS - 1; }
+        if (g.px > W + CELL / 2) { g.px = -CELL / 2; g.x = 0; }
+
+        if (reachedCenter) {
+            // Pilih arah baru
+            var dirs = [
+                { x: 1, y: 0 }, { x: -1, y: 0 },
+                { x: 0, y: 1 }, { x: 0, y: -1 }
+            ];
+            // Jangan berbalik arah kecuali mentok
+            var valid = dirs.filter(function(d) {
+                return !isWall(g.x + d.x, g.y + d.y) && !(d.x === -g.dir.x && d.y === -g.dir.y);
+            });
+
+            if (valid.length === 0) {
+                // Mentok, boleh berbalik
+                valid = dirs.filter(function(d) {
+                    return !isWall(g.x + d.x, g.y + d.y);
+                });
+            }
+
+            if (valid.length > 0) {
+                // Pilih arah yang paling dekat dengan pacman (kecuali scared)
+                var chosen;
+                if (g.scared) {
+                    // Kabur dari pacman
+                    chosen = valid.reduce(function(best, d) {
+                        var dist = Math.abs((g.x + d.x) - pacman.x) + Math.abs((g.y + d.y) - pacman.y);
+                        var bestDist = Math.abs((g.x + best.x) - pacman.x) + Math.abs((g.y + best.y) - pacman.y);
+                        return dist > bestDist ? d : best;
+                    }, valid[0]);
+                } else {
+                    // Kejar pacman
+                    chosen = valid.reduce(function(best, d) {
+                        var dist = Math.abs((g.x + d.x) - pacman.x) + Math.abs((g.y + d.y) - pacman.y);
+                        var bestDist = Math.abs((g.x + best.x) - pacman.x) + Math.abs((g.y + best.y) - pacman.y);
+                        return dist < bestDist ? d : best;
+                    }, valid[0]);
+                }
+                g.dir = chosen;
+            }
+        }
+    });
+}
+
+// ============================================================
+// POWER MODE
+// ============================================================
+function updatePowerMode() {
+    if (powerModeTimer > 0) {
+        powerModeTimer--;
+        if (powerModeTimer === 0) {
+            ghosts.forEach(function(g) { g.scared = false; });
+        }
+    }
+}
+
+// ============================================================
+// COLLISION
+// ============================================================
+function checkCollisions() {
+    ghosts.forEach(function(g) {
+        if (g.eaten) return;
+        var dx = pacman.px - g.px;
+        var dy = pacman.py - g.py;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < CELL * 0.7) {
+            if (g.scared) {
+                g.eaten = true;
+                g.scared = false;
+                score += 200;
+                scoreEl.textContent = score;
+                SFX.eatGhost();
+
+                // Kembalikan ke sarang setelah 3 detik
+                setTimeout(function() {
+                    g.eaten = false;
+                    g.x = 13;
+                    g.y = 12;
+                    g.px = 13 * CELL + CELL / 2;
+                    g.py = 12 * CELL + CELL / 2;
+                    g.dir = { x: 1, y: 0 };
+                }, 3000);
+            } else {
+                // Mati
+                if (!isDying) {
+                    isDying = true;
+                    deathAnim = 0;
+                    lives--;
+                    updateLivesUI();
+                    SFX.death();
+                }
+            }
+        }
+    });
+}
+
+// ============================================================
+// RESPAWN
+// ============================================================
+function respawn() {
+    pacman.x = 14;
+    pacman.y = 23;
+    pacman.px = 14 * CELL + CELL / 2;
+    pacman.py = 23 * CELL + CELL / 2;
+    pacman.dir = { x: 0, y: 0 };
+    pacman.nextDir = { x: 0, y: 0 };
+
+    ghosts.forEach(function(g, i) {
+        g.x = 13 + (i % 2);
+        g.y = 12 + Math.floor(i / 2);
+        g.px = g.x * CELL + CELL / 2;
+        g.py = g.y * CELL + CELL / 2;
+        g.dir = { x: 1, y: 0 };
+        g.scared = false;
+        g.eaten = false;
+    });
+
+    powerModeTimer = 0;
+}
+
+// ============================================================
+// LEVEL COMPLETE
+// ============================================================
+function checkLevelComplete() {
+    if (dotsLeft <= 0) {
+        nextLevel();
+    }
+}
+
+// ============================================================
+// NEXT LEVEL
+// ============================================================
+function nextLevel() {
+    if (currentLevel >= 10) {
+        winGame();
+        return;
+    }
+
+    levelTransitioning = true;
+    isPaused = true;
+    SFX.levelUp();
+
+    var next = currentLevel + 1;
+    showToast('LEVEL ' + next + '!');
+
+    setTimeout(function() {
+        currentLevel = next;
+        buildMaze();
+        powerModeTimer = 0;
+        levelTransitioning = false;
+        isPaused = false;
+        draw();
+    }, 2000);
+}
+
+// ============================================================
+// DRAW
+// ============================================================
+function draw() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+            var v = grid[r][c];
+            var x = c * CELL;
+            var y = r * CELL;
+
+            if (v === 1) {
+                // Dinding - biru dengan border
+                ctx.fillStyle = '#1919a6';
+                ctx.fillRect(x, y, CELL, CELL);
+                ctx.strokeStyle = '#2121de';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2);
+                ctx.fillStyle = 'rgba(100, 100, 255, 0.2)';
+                ctx.fillRect(x + 3, y + 3, CELL - 6, 4);
+            } else if (v === 2) {
+                // Dot kecil
+                ctx.fillStyle = '#ffb8ae';
+                ctx.beginPath();
+                ctx.arc(x + CELL / 2, y + CELL / 2, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (v === 3) {
+                // Power pellet
+                var pulse = 1 + Math.sin(frameCount * 0.15) * 0.3;
+                ctx.fillStyle = '#ffb8ae';
+                ctx.shadowColor = '#ffb8ae';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(x + CELL / 2, y + CELL / 2, 6 * pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+    }
+
+    // Pac-Man
+    if (!isDying) {
+        drawPacman();
+    } else {
+        drawDeathAnimation();
+    }
+
+    // Ghosts
+    ghosts.forEach(function(g) {
+        if (!g.eaten) drawGhost(g);
+    });
+}
+
+function drawPacman() {
+    ctx.save();
+    ctx.translate(pacman.px, pacman.py);
+
+    var angle = 0;
+    if (pacman.dir.x === 1) angle = 0;
+    else if (pacman.dir.x === -1) angle = Math.PI;
+    else if (pacman.dir.y === 1) angle = Math.PI / 2;
+    else if (pacman.dir.y === -1) angle = -Math.PI / 2;
+    else angle = 0;
+
+    ctx.rotate(angle);
+
+    var mouth = Math.abs(Math.sin(mouthAnim)) * 0.5;
+    ctx.fillStyle = '#ffff00';
+    ctx.shadowColor = '#ffff00';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, CELL * 0.45, mouth, Math.PI * 2 - mouth);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Mata
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(2, -5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawDeathAnimation() {
+    var progress = deathAnim / 60;
+    ctx.save();
+    ctx.translate(pacman.px, pacman.py);
+
+    var mouth = progress * Math.PI;
+    ctx.fillStyle = '#ffff00';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, CELL * 0.45, mouth, Math.PI * 2 - mouth);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawGhost(g) {
+    ctx.save();
+    ctx.translate(g.px, g.py);
+
+    var color = g.scared ? (powerModeTimer < 60 && Math.floor(frameCount / 10) % 2 === 0 ? '#ffffff' : '#2121de') : g.color;
+    var ghostRadius = CELL * 0.45;
+
+    // Body ghost
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+
+    ctx.beginPath();
+    ctx.arc(0, -2, ghostRadius, Math.PI, 0);
+    ctx.lineTo(ghostRadius, ghostRadius - 4);
+    // Zigzag bawah
+    var waves = 4;
+    var waveW = (ghostRadius * 2) / waves;
+    for (var i = 0; i < waves; i++) {
+        var wx = ghostRadius - i * waveW;
+        var wy = ghostRadius - 4 + (i % 2 === 0 ? 4 : 0);
+        ctx.lineTo(wx - waveW / 2, wy + 3);
+        ctx.lineTo(wx - waveW, ghostRadius - 4);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Mata
+    if (g.scared) {
+        // Mata scared
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(-5, -4, 3, 0, Math.PI * 2);
+        ctx.arc(5, -4, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(-5, -4, 1.5, 0, Math.PI * 2);
+        ctx.arc(5, -4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+    } else {
+        // Mata normal (putih)
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(-4, -5, 3.5, 0, Math.PI * 2);
+        ctx.arc(4, -5, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Pupil mengikuti arah gerak
+        ctx.fillStyle = '#000';
+        var pupilX = g.dir.x * 1.5;
+        var pupilY = g.dir.y * 1.5;
+        ctx.beginPath();
+        ctx.arc(-4 + pupilX, -5 + pupilY, 1.8, 0, Math.PI * 2);
+        ctx.arc(4 + pupilX, -5 + pupilY, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+// ============================================================
+// GAME OVER
+// ============================================================
+function gameOver(reason) {
+    isRunning = false;
+    clearInterval(gameLoop);
+    saveBest();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+        '<div class="level-badge">LEVEL ' + currentLevel + '</div>' +
+        '<h1 class="dead">💀 GAME OVER</h1>' +
+        '<p>' + (reason || 'Coba lagi!') + '</p>' +
+        '<p>Skor kamu:</p>' +
+        '<div class="final-score">' + score + '</div>' +
+        '<p style="font-size: 12px; color: #8888ff;">Best: ' + bestScore + '</p>' +
+        '<button id="restartBtn" type="button">🔄 MAIN LAGI</button>';
+
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+    saveScore(score);
+}
+
+// ============================================================
+// WIN GAME
+// ============================================================
+function winGame() {
+    isRunning = false;
+    clearInterval(gameLoop);
+    SFX.win();
+    saveBest();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+        '<div class="level-badge">🏆 SEMUA LEVEL SELESAI</div>' +
+        '<h1 class="win">🏆 YOU WIN!</h1>' +
+        '<p>Kamu menaklukkan semua 10 level!</p>' +
+        '<div class="final-score">' + score + '</div>' +
+        '<p style="font-size: 12px; color: #8888ff;">Best: ' + bestScore + '</p>' +
+        '<button id="restartBtn" type="button">🔄 MAIN LAGI</button>';
+
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+    saveScore(score);
+}
+
+// ============================================================
+// SAVE SCORE
+// ============================================================
+function saveScore(finalScore) {
+    if (finalScore <= 0) return;
+    fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: 'pacman', score: finalScore })
+    }).catch(function() {});
+}
+
+// ============================================================
+// INPUT - KEYBOARD
+// ============================================================
+document.addEventListener('keydown', function(e) {
+    var key = e.key.toLowerCase();
+
+    if (key === 'arrowup'    || key === 'w') { e.preventDefault(); pacman.nextDir = { x: 0, y: -1 }; }
+    if (key === 'arrowdown'  || key === 's') { e.preventDefault(); pacman.nextDir = { x: 0, y: 1 }; }
+    if (key === 'arrowleft'  || key === 'a') { e.preventDefault(); pacman.nextDir = { x: -1, y: 0 }; }
+    if (key === 'arrowright' || key === 'd') { e.preventDefault(); pacman.nextDir = { x: 1, y: 0 }; }
+
+    if (key === 'p') {
+        if (isRunning) { isPaused = !isPaused; }
+    }
+    if (key === ' ' || key === 'spacebar') {
+        e.preventDefault();
+        if (!isRunning) initGame();
+    }
+});
+
+// ============================================================
+// INPUT - TOUCH SWIPE
+// ============================================================
+var touchStartX = 0;
+var touchStartY = 0;
+
+canvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
+}, { passive: true });
+
+canvas.addEventListener('touchend', function(e) {
+    if (e.changedTouches.length > 0) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        var dy = e.changedTouches[0].clientY - touchStartY;
+        var absDx = Math.abs(dx);
+        var absDy = Math.abs(dy);
+        var threshold = 30;
+
+        if (Math.max(absDx, absDy) < threshold) return;
+
+        if (absDx > absDy) {
+            pacman.nextDir = { x: dx > 0 ? 1 : -1, y: 0 };
+        } else {
+            pacman.nextDir = { x: 0, y: dy > 0 ? 1 : -1 };
+        }
+    }
+}, { passive: true });
+
+// ============================================================
+// MOBILE CONTROLS
+// ============================================================
+document.querySelectorAll('.controls-mobile button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        if (!isRunning || isPaused) return;
+        var dir = btn.dataset.dir;
+        if (dir === 'up')    pacman.nextDir = { x: 0, y: -1 };
+        if (dir === 'down')  pacman.nextDir = { x: 0, y: 1 };
+        if (dir === 'left')  pacman.nextDir = { x: -1, y: 0 };
+        if (dir === 'right') pacman.nextDir = { x: 1, y: 0 };
+    });
+});
+
+// ============================================================
+// START
+// ============================================================
+startBtn.addEventListener('click', initGame);
+
+// ============================================================
+// BOOT
+// ============================================================
+loadBest();
+fitCanvas();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,377 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}{{ 'Edit Game' if game else 'Tambah Game' }} - Admin Panel{% endblock %}
+{% block page_title %}{{ '✏️ Edit Game' if game else '➕ Tambah Game Baru' }}{% endblock %}
+
+{% block content %}
+<style>
+    .form-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 32px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        max-width: 780px;
+    }
+    .form-card h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+    @media (max-width: 600px) {
+        .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group.full { grid-column: span 2; }
+    @media (max-width: 600px) {
+        .form-group.full { grid-column: span 1; }
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #334155;
+    }
+    .form-group label .required {
+        color: #dc2626;
+        margin-left: 2px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="url"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        outline: none;
+        background: #f8fafc;
+        font-family: inherit;
+        transition: all 0.2s;
+        color: #0f172a;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        border-color: #4f46e5;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+    }
+    .form-group input[readonly] {
+        background: #f1f5f9;
+        color: #94a3b8;
+        cursor: not-allowed;
+    }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 110px;
+        line-height: 1.6;
+    }
+
+    .form-help {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 5px;
+        line-height: 1.5;
+    }
+    .form-help code {
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: #4f46e5;
+        font-family: 'Courier New', monospace;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        padding: 12px 14px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+    }
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #4f46e5;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .checkbox-group label {
+        font-weight: 500;
+        margin: 0;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #334155;
+    }
+
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 14px 18px;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .info-box strong { color: #1e3a8a; }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-secondary {
+        padding: 11px 22px;
+        background: #f1f5f9;
+        color: #334155 !important;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: inherit;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-secondary:hover { background: #e2e8f0; }
+
+    .btn-submit {
+        padding: 11px 26px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(79,70,229,0.4);
+    }
+
+    .preview-thumb {
+        margin-top: 10px;
+        width: 120px;
+        height: 75px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        font-size: 2rem;
+        overflow: hidden;
+    }
+    .preview-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+
+{# Ambil game kalau ada, atau None #}
+{% set is_edit = game is not none %}
+
+{# Slug untuk aksi form #}
+{% if is_edit %}
+    {% set form_action = '/admin/games/' ~ game.slug ~ '/edit' %}
+{% else %}
+    {% set form_action = '/admin/games/new' %}
+{% endif %}
+
+<div class="form-card">
+    <h2>
+        {{ '✏️ Edit Game' if is_edit else '➕ Tambah Game Baru' }}
+    </h2>
+
+    {% if is_edit %}
+    <div class="info-box">
+        <span>ℹ️</span>
+        <div>
+            <strong>Mengedit game:</strong> {{ game.title }}<br>
+            Slug <code>{{ game.slug }}</code> tidak bisa diubah untuk menjaga link dan skor yang sudah ada.
+        </div>
+    </div>
+    {% else %}
+    <div class="info-box">
+        <span>💡</span>
+        <div>
+            <strong>Tips:</strong> Pastikan file game HTML sudah ada di folder <code>static/games/&lt;slug&gt;/&lt;slug&gt;.html</code> sebelum menambahkan game ke database.
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ form_action }}">
+
+        <div class="form-grid">
+            <!-- JUDUL -->
+            <div class="form-group">
+                <label for="title">Judul Game <span class="required">*</span></label>
+                <input type="text" id="title" name="title" required
+                       value="{{ game.title if is_edit else '' }}"
+                       placeholder="Contoh: Snake Adventure">
+                <div class="form-help">Nama game yang ditampilkan di katalog.</div>
+            </div>
+
+            <!-- SLUG -->
+            <div class="form-group">
+                <label for="slug">Slug URL <span class="required">*</span></label>
+                <input type="text" id="slug" name="slug" required
+                       value="{{ game.slug if is_edit else '' }}"
+                       placeholder="snake"
+                       {% if is_edit %}readonly{% endif %}>
+                <div class="form-help">
+                    {% if is_edit %}
+                        Slug tidak bisa diubah.
+                    {% else %}
+                        Huruf kecil, tanpa spasi. Contoh: <code>snake</code>, <code>space-shooter</code>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- KATEGORI -->
+            <div class="form-group">
+                <label for="category">Kategori <span class="required">*</span></label>
+                <select id="category" name="category" required>
+                    {% set current_cat = game.category if is_edit else '' %}
+                    <option value="Arcade"    {% if current_cat == 'Arcade' %}selected{% endif %}>🎮 Arcade</option>
+                    <option value="Puzzle"    {% if current_cat == 'Puzzle' %}selected{% endif %}>🧩 Puzzle</option>
+                    <option value="Action"    {% if current_cat == 'Action' %}selected{% endif %}>⚔️ Action</option>
+                    <option value="Racing"    {% if current_cat == 'Racing' %}selected{% endif %}>🏎️ Racing</option>
+                    <option value="Sports"    {% if current_cat == 'Sports' %}selected{% endif %}>⚽ Sports</option>
+                    <option value="Education" {% if current_cat == 'Education' %}selected{% endif %}>📚 Education</option>
+                    <option value="Shooter"   {% if current_cat == 'Shooter' %}selected{% endif %}>🎯 Shooter</option>
+                </select>
+                <div class="form-help">Kategori menentukan filter di halaman depan.</div>
+            </div>
+
+            <!-- THUMBNAIL -->
+            <div class="form-group">
+                <label for="thumbnail">URL Thumbnail (opsional)</label>
+                <input type="text" id="thumbnail" name="thumbnail"
+                       value="{{ game.thumbnail if is_edit and game.thumbnail else '' }}"
+                       placeholder="/static/thumbnails/snake.jpg"
+                       oninput="updatePreview(this.value)">
+                <div class="form-help">Kosongkan untuk pakai emoji otomatis.</div>
+                <div class="preview-thumb" id="thumbPreview">
+                    {% if is_edit and game.thumbnail %}
+                        <img src="{{ game.thumbnail }}" alt="Preview">
+                    {% else %}
+                        🎮
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- EMBED URL -->
+            <div class="form-group full">
+                <label for="embed_url">URL Embed Game <span class="required">*</span></label>
+                <input type="text" id="embed_url" name="embed_url" required
+                       value="{{ game.embed_url if is_edit else '' }}"
+                       placeholder="/static/games/snake/snake.html">
+                <div class="form-help">
+                    Path ke file HTML game. Contoh: <code>/static/games/snake/snake.html</code>
+                </div>
+            </div>
+
+            <!-- DESKRIPSI -->
+            <div class="form-group full">
+                <label for="description">Deskripsi Game</label>
+                <textarea id="description" name="description"
+                          placeholder="Jelaskan cara bermain, kontrol, fitur, dan tips...">{{ game.description if is_edit and game.description else '' }}</textarea>
+                <div class="form-help">Deskripsi ini muncul di halaman detail game. Bisa pakai emoji dan baris baru.</div>
+            </div>
+
+            <!-- STATUS AKTIF (hanya saat edit) -->
+            {% if is_edit %}
+            <div class="form-group full">
+                <label>Status Game</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_active" name="is_active"
+                           {% if game.is_active %}checked{% endif %}>
+                    <label for="is_active">Game Aktif (ditampilkan di katalog publik)</label>
+                </div>
+                <div class="form-help">Kalau dinonaktifkan, game tidak muncul di katalog tapi skor tetap tersimpan.</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="actions">
+            <a href="/admin/games" class="btn-secondary">✖ Batal</a>
+            <button type="submit" class="btn-submit">
+                {{ '💾 Simpan Perubahan' if is_edit else '➕ Tambah Game' }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function updatePreview(url) {
+    var preview = document.getElementById('thumbPreview');
+    if (url && url.trim()) {
+        preview.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.parentNode.innerHTML=\'⚠️\'">';
+    } else {
+        preview.innerHTML = '🎮';
+    }
+}
+
+// Auto-generate slug dari title (hanya saat tambah game baru)
+{% if not is_edit %}
+document.getElementById('title').addEventListener('input', function() {
+    var slugInput = document.getElementById('slug');
+    if (!slugInput.value || slugInput.dataset.auto === 'true') {
+        var slug = this.value
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
+        slugInput.value = slug;
+        slugInput.dataset.auto = 'true';
+    }
+});
+
+// Kalau user edit manual slug, matikan auto-generate
+document.getElementById('slug').addEventListener('input', function() {
+    this.dataset.auto = 'false';
+});
+{% endif %}
+</script>
+{% endblock %}

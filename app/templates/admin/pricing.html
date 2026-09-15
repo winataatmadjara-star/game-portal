@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paket Harga - GamePortal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border-color: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Putih Elegan */
+        aside {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-links a.active, .nav-links a:hover {
+            background-color: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fecaca;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: auto;
+        }
+
+        .logout-btn:hover {
+            background-color: #fca5a5;
+            color: #991b1b;
+        }
+
+        /* Main Content Area */
+        main {
+            flex-grow: 1;
+            padding: 40px;
+            overflow-y: auto;
+            max-width: calc(100vw - 280px);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #1e293b;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .admin-badge {
+            background: #e0e7ff;
+            color: var(--primary);
+            border: 1px solid #c7d2fe;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Pricing Grid Section */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .pricing-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+        }
+
+        .pricing-card.featured::before {
+            content: 'Populer';
+            position: absolute;
+            top: -12px;
+            right: 24px;
+            background-color: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .plan-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .plan-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            min-height: 40px;
+        }
+
+        .plan-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+
+        .plan-price span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .features-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-grow: 1;
+        }
+
+        .features-list li {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #e2e8f0;
+        }
+
+        .pricing-card.featured .action-btn {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .pricing-card.featured .action-btn:hover {
+            background-color: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside>
+        <div class="brand">
+            ⚡ GamePortal Core
+        </div>
+        
+        <div class="nav-section-title">Menu Utama</div>
+        <ul class="nav-links">
+            <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+            <li><a href="/admin/users">👥 User Management</a></li>
+            <li><a href="/admin/pricing" class="active">🏷️ Paket Harga</a></li>
+            <li><a href="/admin/settings">⚙️ Setting Web</a></li>
+        </ul>
+
+        <div class="nav-section-title" style="margin-top: 24px;">Sistem</div>
+        <ul class="nav-links">
+            <li><a href="/" target="_blank">🌐 Lihat Website</a></li>
+        </ul>
+
+        <a href="/logout" class="logout-btn">Keluar Sesi</a>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+        <header>
+            <div>
+                <h1>Manajemen Paket Harga</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Kelola opsi langganan dan tingkatan membership untuk pengguna platform.</p>
+            </div>
+            <div class="header-right">
+                <div class="admin-badge">🛡️ {{ admin_user }}</div>
+            </div>
+        </header>
+
+        <!-- Pricing Cards Grid -->
+        <div class="pricing-grid">
+            <!-- Free Plan -->
+            <div class="pricing-card">
+                <div class="plan-title">Free Member</div>
+                <div class="plan-desc">Akses dasar penjelajahan katalog game publik secara gratis.</div>
+                <div class="plan-price">Rp 0 <span>/ selamanya</span></div>
+                <ul class="features-list">
+                    <li>✅ Akses Katalog Game Publik</li>
+                    <li>✅ Halaman Profil Standar</li>
+                    <li>❌ Akses Konten Premium</li>
+                    <li>❌ Bebas Iklan</li>
+                </ul>
+                <button class="action-btn">Kelola Paket</button>
+            </div>
+
+            <!-- Pro Plan (Featured) -->
+            <div class="pricing-card featured">
+                <div class="plan-title">Pro Gamer</div>
+                <div class="plan-desc">Paket unggulan untuk pengalaman bermain maksimal tanpa batasan.</div>
+                <div class="plan-price">Rp 49.000 <span>/ bulan</span></div>
+                <ul class="features-list">
+                    <li>✅ Semua Fitur Free Member</li>
+                    <li>✅ Akses Semua Game Eksklusif</li>
+                    <li>✅ Bebas Iklan Sepenuhnya</li>
+                    <li>✅ Prioritas Dukungan Server</li>
+                </ul>
+                <button class="action-btn">Kelola Paket</button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="pricing-card">
+                <div class="plan-title">VIP Legend</div>
+                <div class="plan-desc">Akses tingkat tertinggi dengan fasilitas eksklusif khusus kreator & sultan.</div>
+                <div class="plan-price">Rp 149.000 <span>/ bulan</span></div>
+                <ul class="features-list">
+                    <li>✅ Semua Fitur Pro Gamer</li>
+                    <li>✅ Badge Khusus VIP di Profil</li>
+                    <li>✅ Akses Early-Access Game Baru</li>
+                    <li>✅ Fitur Kustomisasi Lanjutan</li>
+                </ul>
+                <button class="action-btn">Kelola Paket</button>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

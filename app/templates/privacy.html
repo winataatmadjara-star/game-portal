@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Kebijakan Privasi - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .legal-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 40px;
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        color: var(--text-main, #0f172a);
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+    }
+
+    .legal-container h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #1e293b;
+        letter-spacing: -0.5px;
+    }
+
+    .last-updated {
+        font-size: 0.85rem;
+        color: var(--text-muted, #64748b);
+        margin-bottom: 32px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    .legal-container h3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 28px;
+        margin-bottom: 10px;
+        color: #1e293b;
+    }
+
+    .legal-container p, .legal-container ul {
+        font-size: 0.95rem;
+        color: #475569;
+        margin-bottom: 16px;
+    }
+
+    .legal-container ul {
+        padding-left: 20px;
+    }
+
+    .legal-container li {
+        margin-bottom: 6px;
+    }
+</style>
+
+<div class="legal-container">
+    <h1>Kebijakan Privasi</h1>
+    <div class="last-updated">Terakhir diperbarui: 14 September 2026</div>
+
+    <p>Selamat datang di <strong>GamePortal</strong>. Kami sangat menghargai privasi dan komitmen untuk melindungi data pribadi Anda. Kebijakan Privasi ini menguraikan bagaimana kami mengumpulkan, menggunakan, mengungkapkan, dan mengamankan informasi Anda saat menggunakan situs web dan layanan kami.</p>
+
+    <h3>1. Pengumpulan Data Informasi</h3>
+    <p>Untuk memberikan pengalaman bermain dan layanan akun yang optimal, kami mengumpulkan informasi tertentu dari Anda, yang meliputi:</p>
+    <ul>
+        <li><strong>Informasi Identifikasi Pribadi:</strong> Username, alamat email, dan nomor kontak/HP yang Anda daftarkan.</li>
+        <li><strong>Data Keamanan:</strong> Kata sandi akun yang disimpan dalam bentuk terenkripsi (*hashed*).</li>
+        <li><strong>Data Aktivitas & Permainan:</strong> Statistik game, skor, papan peringkat (*leaderboard*), riwayat keanggotaan, serta log aktivitas sesi login.</li>
+    </ul>
+
+    <h3>2. Penggunaan Informasi Pengguna</h3>
+    <p>Data dan informasi yang kami kumpulkan digunakan secara eksklusif untuk kepentingan platform, antara lain:</p>
+    <ul>
+        <li>Membuat, mengelola, dan mengamankan akun member Anda.</li>
+        <li>Menyediakan fitur interaktif, pembaruan layanan, dan dukungan pelanggan (*customer support*).</li>
+        <li>Mencegah aktivitas penipuan, akses ilegal, serta menjaga integritas keamanan sistem GamePortal.</li>
+    </ul>
+
+    <h3>3. Perlindungan dan Keamanan Data</h3>
+    <p>Kami menerapkan prosedur keamanan fisik, elektronik, dan manajerial yang wajar untuk melindungi kerahasiaan data pribadi Anda dari akses yang tidak sah, pengungkapan, perubahan, atau perusakan.</p>
+
+    <h3>4. Pengungkapan kepada Pihak Ketiga</h3>
+    <p>Kami tidak menjual, memperdagangkan, atau mengalihkan data pribadi Anda kepada pihak luar tanpa izin, kecuali jika diwajibkan oleh hukum yang berlaku atau untuk keperluan operasional inti platform di bawah perjanjian kerahasiaan yang ketat.</p>
+
+    <h3>5. Hak Akses dan Kontrol Pengguna</h3>
+    <p>Anda memiliki hak penuh untuk mengakses, memperbarui, atau meminta penghapusan informasi profil Anda kapan saja melalui pengaturan dasbor akun atau dengan menghubungi tim dukungan kami.</p>
+
+    <h3>6. Perubahan Kebijakan Privasi</h3>
+    <p>GamePortal berhak untuk memperbarui Kebijakan Privasi ini sewaktu-waktu. Setiap perubahan akan diumumkan langsung melalui halaman ini beserta tanggal pembaruannya.</p>
+
+    <h3>7. Hubungi Kami</h3>
+    <p>Jika Anda memiliki pertanyaan, saran, atau keluhan terkait Kebijakan Privasi ini, silakan hubungi kami melalui email di <a href="mailto:support@gameportal.com" style="color: var(--primary, #4f46e5); text-decoration: none;">support@gameportal.com</a>.</p>
+</div>
+{% endblock %}

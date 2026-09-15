@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Cari Game - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .search-header {
+        margin-bottom: 24px;
+    }
+    .search-header h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+    .search-header p {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    .search-header .query-highlight {
+        color: #4f46e5;
+        font-weight: 700;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 10px;
+        max-width: 600px;
+        margin-bottom: 32px;
+    }
+    .search-form input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        outline: none;
+        font-family: inherit;
+        transition: all 0.2s;
+    }
+    .search-form input:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+    .search-form button {
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        font-family: inherit;
+    }
+    .search-form button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    }
+
+    .empty-search {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+        background: #ffffff;
+        border: 2px dashed #e2e8f0;
+        border-radius: 14px;
+    }
+    .empty-search .emoji {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 12px;
+        opacity: 0.6;
+    }
+    .empty-search h3 {
+        font-size: 1.3rem;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+</style>
+
+<div class="search-header">
+    <h1>🔍 Cari Game</h1>
+    {% if query %}
+        <p>Hasil pencarian untuk <span class="query-highlight">"{{ query }}"</span> · {{ games|length }} game ditemukan</p>
+    {% else %}
+        <p>Masukkan kata kunci untuk mencari game favoritmu.</p>
+    {% endif %}
+</div>
+
+<form action="/search" method="GET" class="search-form">
+    <input type="text" name="q" placeholder="Cari game (mis: snake, puzzle, arcade)..." value="{{ query }}" autofocus>
+    <button type="submit">Cari</button>
+</form>
+
+{% if games %}
+    {% set game_visuals = {
+        'snake':       {'emoji': '🐍', 'gradient': 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 50%, #6ee7b7 100%)'},
+        'breakout':    {'emoji': '🧱', 'gradient': 'linear-gradient(135deg, #fed7aa 0%, #fdba74 50%, #fb923c 100%)'},
+        'tetris':      {'emoji': '🎮', 'gradient': 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 50%, #a78bfa 100%)'},
+        'flappy-bird': {'emoji': '🐦', 'gradient': 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 50%, #67e8f9 100%)'},
+        '2048':        {'emoji': '🔢', 'gradient': 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)'},
+        'pacman':      {'emoji': '👻', 'gradient': 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)'},
+        'minesweeper': {'emoji': '💣', 'gradient': 'linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%)'},
+        'memory-card': {'emoji': '🃏', 'gradient': 'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%)'}
+    } %}
+
+    <div class="game-grid">
+        {% for g in games %}
+            {% set visual = game_visuals.get(g.slug, {'emoji': '🎮', 'gradient': 'linear-gradient(135deg, #e2e8f0, #cbd5e1)'}) %}
+            <a href="{{ url_for('web.game_detail_page', game_slug=g.slug) }}" class="game-card">
+                <div class="game-thumbnail" style="background: {{ visual.gradient }};">
+                    {% if g.thumbnail %}
+                        <img src="{{ g.thumbnail }}" alt="{{ g.title }}">
+                    {% else %}
+                        <span class="emoji-big">{{ visual.emoji }}</span>
+                    {% endif %}
+                    <span class="game-category">{{ g.category }}</span>
+                    <span class="play-badge">▶</span>
+                </div>
+                <div class="game-info">
+                    <div class="game-title">{{ g.title }}</div>
+                    {% if g.description %}
+                        <div class="game-desc">{{ g.description }}</div>
+                    {% endif %}
+                    <div class="game-meta">
+                        <span>👁 {{ g.views or 0 }}</span>
+                        <span>🎯 Main</span>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% elif query %}
+    <div class="empty-search">
+        <span class="emoji">🔍</span>
+        <h3>Tidak ada hasil untuk "{{ query }}"</h3>
+        <p>Coba kata kunci lain, atau lihat <a href="/" style="color:#4f46e5; font-weight:600;">semua game</a>.</p>
+    </div>
+{% else %}
+    <div class="empty-search">
+        <span class="emoji">💡</span>
+        <h3>Mulai cari game</h3>
+        <p>Ketik judul game atau kategori di kolom pencarian di atas.</p>
+    </div>
+{% endif %}
+
+{% endblock %}

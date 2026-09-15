@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}Login - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .auth-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 260px);
+        padding: 20px;
+    }
+    .auth-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 40px 36px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .auth-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #4f46e5, #7c3aed, #06b6d4);
+    }
+    .auth-header-icon {
+        font-size: 3rem;
+        width: 80px; height: 80px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+        border-radius: 20px;
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.15);
+    }
+    .auth-card h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+    }
+    .auth-subtitle {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 28px;
+        line-height: 1.5;
+    }
+    .alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    .alert-success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    .form-group { text-align: left; margin-bottom: 18px; }
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 13px 16px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: #0f172a;
+        background: #f8fafc;
+        outline: none;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    .form-group input:focus {
+        border-color: #4f46e5;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 0.3px;
+        margin-top: 8px;
+        transition: all 0.2s;
+        font-family: inherit;
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.4);
+    }
+    .auth-footer {
+        margin-top: 24px;
+        font-size: 0.88rem;
+        color: #64748b;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+    .auth-footer a {
+        color: #4f46e5;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .auth-footer a:hover { color: #7c3aed; text-decoration: underline; }
+    @media (max-width: 480px) {
+        .auth-card { padding: 30px 24px; }
+        .auth-header-icon { width: 64px; height: 64px; font-size: 2.2rem; }
+        .auth-card h2 { font-size: 1.3rem; }
+    }
+</style>
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header-icon">🔐</div>
+        <h2>Selamat Datang Kembali</h2>
+        <p class="auth-subtitle">Masuk untuk melanjutkan akses ke katalog game favorit Anda.</p>
+
+        {% if error %}<div class="alert-error">⚠️ {{ error }}</div>{% endif %}
+        {% if success %}<div class="alert-success">✅ {{ success }}</div>{% endif %}
+
+        <form method="POST" action="/login">
+            <input type="hidden" name="next" value="{{ next_url or '/' }}">
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Masukkan username Anda" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-submit">Masuk ke Akun</button>
+        </form>
+
+        <p class="auth-footer">Belum punya akun? <a href="/register">Daftar sekarang</a></p>
+    </div>
+</div>
+{% endblock %}

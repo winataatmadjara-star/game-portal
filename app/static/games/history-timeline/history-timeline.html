@@ -1,0 +1,2886 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>History Timeline</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+            overflow-x: hidden;
+            background: #07111f;
+            color: #f8fafc;
+            touch-action: manipulation;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* =========================================================
+           BACKGROUND
+           ========================================================= */
+
+        .bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 15% 20%,
+                    rgba(59, 130, 246, .16),
+                    transparent 40%
+                ),
+                radial-gradient(
+                    circle at 85% 80%,
+                    rgba(245, 158, 11, .14),
+                    transparent 40%
+                ),
+                linear-gradient(
+                    135deg,
+                    #07111f,
+                    #0b1728 50%,
+                    #101827
+                );
+        }
+
+        .bg::before,
+        .bg::after {
+            content: "";
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: .18;
+            animation: floatOrb 12s ease-in-out infinite alternate;
+        }
+
+        .bg::before {
+            background: #2563eb;
+            top: -160px;
+            left: -120px;
+        }
+
+        .bg::after {
+            background: #f59e0b;
+            right: -150px;
+            bottom: -180px;
+            animation-delay: -5s;
+        }
+
+        @keyframes floatOrb {
+            from {
+                transform: translate(0, 0) scale(1);
+            }
+
+            to {
+                transform: translate(50px, 30px) scale(1.15);
+            }
+        }
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .game-container {
+            position: relative;
+            z-index: 2;
+            width: min(100%, 920px);
+            min-height: 100vh;
+            padding: 22px 18px 30px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
+        .header {
+            width: 100%;
+            max-width: 820px;
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .title {
+            font-size: clamp(1.7rem, 4vw, 2.7rem);
+            font-weight: 900;
+            letter-spacing: 2px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #fbbf24,
+                    #f59e0b 45%,
+                    #60a5fa
+                );
+
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            filter:
+                drop-shadow(
+                    0 0 20px rgba(245, 158, 11, .22)
+                );
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           HUD
+           ========================================================= */
+
+        .hud {
+            width: 100%;
+            max-width: 820px;
+
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .hud-card {
+            min-width: 0;
+            padding: 10px 8px;
+            border-radius: 14px;
+
+            background: rgba(15, 23, 42, .78);
+
+            border:
+                1px solid rgba(148, 163, 184, .13);
+
+            backdrop-filter: blur(14px);
+
+            text-align: center;
+
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, .18);
+        }
+
+        .hud-label {
+            display: block;
+            color: #64748b;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+
+        .hud-value {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .score-value {
+            color: #fbbf24;
+        }
+
+        .best-value {
+            color: #4ade80;
+        }
+
+        .level-value {
+            color: #60a5fa;
+        }
+
+        .time-value {
+            color: #f472b6;
+        }
+
+        .life-value {
+            color: #fb7185;
+        }
+
+        /* =========================================================
+           PROGRESS
+           ========================================================= */
+
+        .progress-info {
+            width: 100%;
+            max-width: 820px;
+
+            display: flex;
+            justify-content: space-between;
+
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            max-width: 820px;
+            height: 7px;
+
+            background: rgba(15, 23, 42, .85);
+
+            border:
+                1px solid rgba(148, 163, 184, .12);
+
+            border-radius: 20px;
+            overflow: hidden;
+
+            margin-bottom: 18px;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #3b82f6,
+                    #60a5fa,
+                    #fbbf24
+                );
+
+            box-shadow:
+                0 0 14px rgba(96, 165, 250, .55);
+
+            transition: width .35s ease;
+        }
+
+        /* =========================================================
+           QUESTION PANEL
+           ========================================================= */
+
+        .question-panel {
+            width: 100%;
+            max-width: 820px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(15, 23, 42, .93),
+                    rgba(15, 23, 42, .74)
+                );
+
+            border:
+                1px solid rgba(148, 163, 184, .16);
+
+            border-radius: 22px;
+
+            padding: 22px;
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, .32),
+                inset 0 1px 0 rgba(255, 255, 255, .03);
+
+            backdrop-filter: blur(16px);
+        }
+
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 6px 13px;
+
+            border-radius: 999px;
+
+            background:
+                rgba(59, 130, 246, .12);
+
+            border:
+                1px solid rgba(96, 165, 250, .35);
+
+            color: #93c5fd;
+
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+
+            margin-bottom: 10px;
+        }
+
+        .question-title {
+            font-size: clamp(1.15rem, 3vw, 1.65rem);
+            font-weight: 800;
+            color: #f8fafc;
+            margin-bottom: 6px;
+        }
+
+        .question-description {
+            color: #94a3b8;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+
+        /* =========================================================
+           TIMELINE
+           ========================================================= */
+
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            margin-bottom: 10px;
+
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-header::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(148, 163, 184, .25),
+                    transparent
+                );
+        }
+
+        .timeline {
+            position: relative;
+
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+
+            gap: 10px;
+
+            min-height: 160px;
+        }
+
+        .timeline::before {
+            content: "";
+
+            position: absolute;
+
+            left: 6%;
+            right: 6%;
+            top: 24px;
+
+            height: 3px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #334155,
+                    #64748b,
+                    #334155
+                );
+
+            border-radius: 5px;
+            opacity: .7;
+        }
+
+        .timeline-slot {
+            position: relative;
+            z-index: 2;
+
+            min-height: 145px;
+
+            border:
+                1px dashed rgba(148, 163, 184, .28);
+
+            border-radius: 15px;
+
+            background:
+                rgba(2, 6, 23, .35);
+
+            padding: 8px;
+
+            transition:
+                border-color .2s,
+                background .2s,
+                transform .2s;
+        }
+
+        .timeline-slot::before {
+            content: "";
+
+            display: block;
+
+            width: 13px;
+            height: 13px;
+
+            margin: 10px auto 8px;
+
+            border-radius: 50%;
+
+            background: #334155;
+
+            border:
+                3px solid #0f172a;
+
+            box-shadow:
+                0 0 0 1px rgba(148, 163, 184, .25);
+        }
+
+        .timeline-slot.drag-over {
+            border-color: #60a5fa;
+
+            background:
+                rgba(59, 130, 246, .10);
+
+            transform: translateY(-3px);
+        }
+
+        .slot-label {
+            text-align: center;
+
+            color: #64748b;
+            font-size: 9px;
+
+            text-transform: uppercase;
+            letter-spacing: .8px;
+
+            margin-bottom: 5px;
+        }
+
+        .timeline-slot .event-card {
+            min-height: 92px;
+        }
+
+        /* =========================================================
+           EVENT CARDS
+           ========================================================= */
+
+        .cards-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            margin-top: 20px;
+            margin-bottom: 10px;
+
+            color: #cbd5e1;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cards-title::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(148, 163, 184, .25),
+                    transparent
+                );
+        }
+
+        .cards {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 10px;
+
+            min-height: 110px;
+        }
+
+        .event-card {
+            position: relative;
+
+            min-height: 105px;
+
+            padding: 12px 10px;
+
+            border-radius: 15px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(30, 41, 59, .98),
+                    rgba(15, 23, 42, .98)
+                );
+
+            border:
+                1px solid rgba(148, 163, 184, .18);
+
+            cursor: grab;
+            user-select: none;
+
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, .20);
+
+            transition:
+                transform .2s,
+                border-color .2s,
+                box-shadow .2s,
+                opacity .2s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-4px);
+
+            border-color:
+                rgba(96, 165, 250, .55);
+
+            box-shadow:
+                0 12px 28px rgba(0, 0, 0, .30);
+        }
+
+        .event-card:active {
+            cursor: grabbing;
+        }
+
+        .event-card.dragging {
+            opacity: .45;
+            transform: scale(.97);
+        }
+
+        .event-year {
+            color: #fbbf24;
+            font-size: 13px;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+
+        .event-title {
+            color: #f8fafc;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+            margin-bottom: 5px;
+        }
+
+        .event-desc {
+            color: #94a3b8;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .event-icon {
+            position: absolute;
+            top: 9px;
+            right: 9px;
+            font-size: 15px;
+            opacity: .75;
+        }
+
+        /* =========================================================
+           BUTTONS
+           ========================================================= */
+
+        .actions {
+            width: 100%;
+            max-width: 820px;
+
+            display: flex;
+            justify-content: center;
+
+            gap: 9px;
+
+            margin-top: 16px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+
+            padding: 11px 20px;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            cursor: pointer;
+
+            transition:
+                transform .18s,
+                box-shadow .18s,
+                opacity .18s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background:
+                linear-gradient(
+                    135deg,
+                    #fbbf24,
+                    #f59e0b
+                );
+
+            color: #111827;
+
+            box-shadow:
+                0 7px 22px rgba(245, 158, 11, .25);
+        }
+
+        .btn-secondary {
+            background:
+                rgba(30, 41, 59, .95);
+
+            color: #cbd5e1;
+
+            border:
+                1px solid rgba(148, 163, 184, .18);
+        }
+
+        /* =========================================================
+           HINT
+           ========================================================= */
+
+        .hint {
+            text-align: center;
+
+            color: #64748b;
+
+            font-size: 10px;
+
+            margin-top: 12px;
+        }
+
+        /* =========================================================
+           OVERLAY
+           ========================================================= */
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+
+            z-index: 100;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+
+            background:
+                rgba(2, 6, 23, .82);
+
+            backdrop-filter: blur(12px);
+        }
+
+        .overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            width: min(92vw, 500px);
+
+            text-align: center;
+
+            padding: 34px 25px;
+
+            border-radius: 24px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #111c30,
+                    #0b1424
+                );
+
+            border:
+                1px solid rgba(148, 163, 184, .18);
+
+            box-shadow:
+                0 30px 100px rgba(0, 0, 0, .55);
+
+            animation: modalIn .35s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .modal h1 {
+            font-size: 25px;
+            margin-bottom: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #fbbf24,
+                    #60a5fa
+                );
+
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal p {
+            color: #94a3b8;
+
+            font-size: 12px;
+            line-height: 1.6;
+
+            margin-bottom: 7px;
+        }
+
+        .modal-score {
+            color: #fbbf24;
+
+            font-size: 38px;
+            font-weight: 900;
+
+            margin: 12px 0;
+        }
+
+        .modal-stat {
+            color: #64748b;
+
+            font-size: 11px;
+
+            margin-bottom: 18px;
+        }
+
+        /* =========================================================
+           TOAST
+           ========================================================= */
+
+        .toast {
+            position: fixed;
+
+            left: 50%;
+            top: 13%;
+
+            z-index: 150;
+
+            transform:
+                translate(-50%, -20px)
+                scale(.85);
+
+            opacity: 0;
+            pointer-events: none;
+
+            padding: 11px 20px;
+
+            border-radius: 999px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #3b82f6
+                );
+
+            color: white;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            box-shadow:
+                0 10px 35px rgba(37, 99, 235, .4);
+        }
+
+        .toast.show {
+            animation: toastShow 1.7s ease forwards;
+        }
+
+        @keyframes toastShow {
+            0% {
+                opacity: 0;
+
+                transform:
+                    translate(-50%, -20px)
+                    scale(.85);
+            }
+
+            15% {
+                opacity: 1;
+
+                transform:
+                    translate(-50%, 0)
+                    scale(1);
+            }
+
+            75% {
+                opacity: 1;
+
+                transform:
+                    translate(-50%, 0)
+                    scale(1);
+            }
+
+            100% {
+                opacity: 0;
+
+                transform:
+                    translate(-50%, -10px)
+                    scale(.95);
+            }
+        }
+
+        /* =========================================================
+           CORRECT / WRONG
+           ========================================================= */
+
+        .correct {
+            animation: correctFlash .55s ease;
+        }
+
+        .wrong {
+            animation: wrongFlash .55s ease;
+        }
+
+        @keyframes correctFlash {
+            0% {
+                box-shadow:
+                    0 0 0 rgba(74, 222, 128, 0);
+            }
+
+            50% {
+                box-shadow:
+                    0 0 30px rgba(74, 222, 128, .55);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 rgba(74, 222, 128, 0);
+            }
+        }
+
+        @keyframes wrongFlash {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-6px);
+            }
+
+            75% {
+                transform: translateX(6px);
+            }
+        }
+
+        /* =========================================================
+           MOBILE
+           ========================================================= */
+
+        @media (max-width: 720px) {
+
+            .game-container {
+                padding:
+                    15px
+                    10px
+                    25px;
+            }
+
+            .hud {
+                grid-template-columns:
+                    repeat(5, minmax(0, 1fr));
+
+                gap: 5px;
+            }
+
+            .hud-card {
+                padding: 8px 4px;
+                border-radius: 10px;
+            }
+
+            .hud-value {
+                font-size: 13px;
+            }
+
+            .hud-label {
+                font-size: 7px;
+            }
+
+            .question-panel {
+                padding: 15px;
+                border-radius: 18px;
+            }
+
+            .timeline,
+            .cards {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .timeline {
+                min-height: 0;
+            }
+
+            .timeline::before {
+                display: none;
+            }
+
+            .timeline-slot {
+                min-height: 135px;
+            }
+
+            .event-card {
+                min-height: 100px;
+            }
+
+            .event-title {
+                font-size: 10px;
+            }
+
+            .event-desc {
+                font-size: 8px;
+            }
+        }
+
+        @media (max-width: 420px) {
+
+            .title {
+                font-size: 1.45rem;
+            }
+
+            .subtitle {
+                font-size: 10px;
+            }
+
+            .question-title {
+                font-size: 1rem;
+            }
+
+            .question-description {
+                font-size: 10px;
+            }
+
+            .timeline,
+            .cards {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+            .timeline-slot {
+                min-height: 128px;
+            }
+
+            .event-card {
+                min-height: 96px;
+                padding: 9px;
+            }
+
+            .event-year {
+                font-size: 11px;
+            }
+
+            .event-title {
+                font-size: 9px;
+            }
+
+            .event-desc {
+                font-size: 7.5px;
+            }
+
+            .btn {
+                padding: 10px 14px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg"></div>
+
+    <div class="game-container">
+
+        <header class="header">
+
+            <div class="title">
+                🏛️ HISTORY TIMELINE
+            </div>
+
+            <div class="subtitle">
+                Susun peristiwa sejarah ke dalam urutan waktu yang benar
+            </div>
+
+        </header>
+
+        <!-- HUD -->
+
+        <div class="hud">
+
+            <div class="hud-card">
+                <span class="hud-label">Skor</span>
+                <span
+                    class="hud-value score-value"
+                    id="score">
+                    0
+                </span>
+            </div>
+
+            <div class="hud-card">
+                <span class="hud-label">Terbaik</span>
+                <span
+                    class="hud-value best-value"
+                    id="best">
+                    0
+                </span>
+            </div>
+
+            <div class="hud-card">
+                <span class="hud-label">Level</span>
+                <span
+                    class="hud-value level-value"
+                    id="level">
+                    1/10
+                </span>
+            </div>
+
+            <div class="hud-card">
+                <span class="hud-label">Waktu</span>
+                <span
+                    class="hud-value time-value"
+                    id="time">
+                    60
+                </span>
+            </div>
+
+            <div class="hud-card">
+                <span class="hud-label">Nyawa</span>
+                <span
+                    class="hud-value life-value"
+                    id="lives">
+                    ❤️❤️❤️
+                </span>
+            </div>
+
+        </div>
+
+        <div class="progress-info">
+
+            <span id="progressText">
+                Level 1
+            </span>
+
+            <span id="streakText">
+                🔥 Streak 0
+            </span>
+
+        </div>
+
+        <div class="progress-bar">
+
+            <div
+                class="progress-fill"
+                id="progressFill">
+            </div>
+
+        </div>
+
+        <!-- GAME -->
+
+        <main class="question-panel">
+
+            <div
+                class="level-badge"
+                id="levelBadge">
+                LEVEL 1
+            </div>
+
+            <h1
+                class="question-title"
+                id="questionTitle">
+                Susun Sejarah
+            </h1>
+
+            <p
+                class="question-description"
+                id="questionDescription">
+                Seret setiap kartu ke posisi yang benar,
+                dari peristiwa paling awal hingga paling akhir.
+            </p>
+
+            <div class="timeline-header">
+                📜 TIMELINE
+            </div>
+
+            <div
+                class="timeline"
+                id="timeline">
+            </div>
+
+            <div class="cards-title">
+                🃏 PERISTIWA
+            </div>
+
+            <div
+                class="cards"
+                id="cards">
+            </div>
+
+            <div class="actions">
+
+                <button
+                    class="btn btn-secondary"
+                    id="resetBtn"
+                    type="button">
+                    ↻ Acak Ulang
+                </button>
+
+                <button
+                    class="btn btn-primary"
+                    id="checkBtn"
+                    type="button">
+                    ✓ Periksa Jawaban
+                </button>
+
+            </div>
+
+            <div class="hint">
+                💡 Tip: perhatikan tahun pada setiap peristiwa.
+                Urutkan dari tahun paling kecil ke paling besar.
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- OVERLAY START / RESULT -->
+
+    <div
+        class="overlay"
+        id="overlay">
+
+        <div class="modal">
+
+            <div
+                class="modal-icon"
+                id="modalIcon">
+                🏛️
+            </div>
+
+            <h1 id="modalTitle">
+                History Timeline
+            </h1>
+
+            <p id="modalText">
+                Uji pengetahuan sejarahmu dengan menyusun
+                10 level kronologi sejarah.
+            </p>
+
+            <div
+                class="modal-score"
+                id="modalScore">
+                10 LEVEL
+            </div>
+
+            <div
+                class="modal-stat"
+                id="modalStat">
+                40 peristiwa sejarah menantimu.
+            </div>
+
+            <button
+                class="btn btn-primary"
+                id="startBtn"
+                type="button">
+                ▶ MULAI PETUALANGAN
+            </button>
+
+        </div>
+
+    </div>
+
+    <div
+        class="toast"
+        id="toast">
+    </div>
+
+    <script>
+        "use strict";
+
+        /* =========================================================
+           HISTORY TIMELINE
+           10 LEVEL
+           ========================================================= */
+
+        const LEVELS = [
+
+            {
+                title: "Awal Peradaban",
+
+                description:
+                    "Susun tonggak sejarah dunia dari yang paling awal.",
+
+                events: [
+
+                    {
+                        year: -3100,
+                        yearText: "±3100 SM",
+                        title: "Penyatuan Mesir Kuno",
+                        desc: "Mesir Hulu dan Hilir dipersatukan.",
+                        icon: "🏺"
+                    },
+
+                    {
+                        year: -776,
+                        yearText: "776 SM",
+                        title: "Olimpiade Kuno",
+                        desc: "Tradisi Olimpiade di Yunani dimulai.",
+                        icon: "🏛️"
+                    },
+
+                    {
+                        year: -509,
+                        yearText: "509 SM",
+                        title: "Republik Romawi",
+                        desc: "Republik Romawi mulai berkembang.",
+                        icon: "🦅"
+                    },
+
+                    {
+                        year: -221,
+                        yearText: "221 SM",
+                        title: "Qin Menyatukan Tiongkok",
+                        desc: "Qin Shi Huang menyatukan wilayah Tiongkok.",
+                        icon: "🐉"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Dunia Kuno",
+
+                description:
+                    "Masuki era kekaisaran dan perkembangan peradaban kuno.",
+
+                events: [
+
+                    {
+                        year: 27,
+                        yearText: "27 SM",
+                        title: "Awal Kekaisaran Romawi",
+                        desc: "Augustus menjadi kaisar pertama Romawi.",
+                        icon: "🏛️"
+                    },
+
+                    {
+                        year: 476,
+                        yearText: "476",
+                        title: "Akhir Kekaisaran Romawi Barat",
+                        desc: "Tradisional dianggap sebagai akhir Romawi Barat.",
+                        icon: "🦅"
+                    },
+
+                    {
+                        year: 622,
+                        yearText: "622",
+                        title: "Hijrah Nabi Muhammad",
+                        desc: "Peristiwa penting dalam sejarah Islam.",
+                        icon: "🌙"
+                    },
+
+                    {
+                        year: 800,
+                        yearText: "800",
+                        title: "Charlemagne Dimahkotai",
+                        desc: "Charlemagne dimahkotai sebagai kaisar.",
+                        icon: "👑"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Abad Pertengahan",
+
+                description:
+                    "Urutkan berbagai peristiwa penting pada abad pertengahan.",
+
+                events: [
+
+                    {
+                        year: 1066,
+                        yearText: "1066",
+                        title: "Penaklukan Norman",
+                        desc: "William menaklukkan Inggris.",
+                        icon: "⚔️"
+                    },
+
+                    {
+                        year: 1215,
+                        yearText: "1215",
+                        title: "Magna Carta",
+                        desc: "Piagam penting dalam sejarah konstitusional Inggris.",
+                        icon: "📜"
+                    },
+
+                    {
+                        year: 1347,
+                        yearText: "1347",
+                        title: "Wabah Black Death",
+                        desc: "Wabah pes menyebar luas di Eropa.",
+                        icon: "☠️"
+                    },
+
+                    {
+                        year: 1453,
+                        yearText: "1453",
+                        title: "Jatuhnya Konstantinopel",
+                        desc: "Konstantinopel jatuh ke Kesultanan Utsmaniyah.",
+                        icon: "🏰"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Era Penjelajahan",
+
+                description:
+                    "Susun perjalanan dunia menuju era eksplorasi samudra.",
+
+                events: [
+
+                    {
+                        year: 1492,
+                        yearText: "1492",
+                        title: "Columbus Melintasi Atlantik",
+                        desc: "Ekspedisi Columbus mencapai Karibia.",
+                        icon: "⛵"
+                    },
+
+                    {
+                        year: 1498,
+                        yearText: "1498",
+                        title: "Vasco da Gama ke India",
+                        desc: "Rute laut Eropa–India berhasil ditempuh.",
+                        icon: "🌊"
+                    },
+
+                    {
+                        year: 1519,
+                        yearText: "1519",
+                        title: "Ekspedisi Magellan",
+                        desc: "Ekspedisi keliling dunia dimulai.",
+                        icon: "🧭"
+                    },
+
+                    {
+                        year: 1543,
+                        yearText: "1543",
+                        title: "Revolusi Astronomi Copernicus",
+                        desc: "Gagasan heliosentris dipublikasikan.",
+                        icon: "🌌"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Revolusi & Perubahan",
+
+                description:
+                    "Dunia memasuki era revolusi politik dan pemikiran.",
+
+                events: [
+
+                    {
+                        year: 1687,
+                        yearText: "1687",
+                        title: "Principia Newton",
+                        desc: "Newton menerbitkan karya penting tentang fisika.",
+                        icon: "🍎"
+                    },
+
+                    {
+                        year: 1776,
+                        yearText: "1776",
+                        title: "Deklarasi Kemerdekaan AS",
+                        desc: "Declaration of Independence diumumkan.",
+                        icon: "🗽"
+                    },
+
+                    {
+                        year: 1789,
+                        yearText: "1789",
+                        title: "Revolusi Prancis",
+                        desc: "Revolusi Prancis dimulai.",
+                        icon: "🇫🇷"
+                    },
+
+                    {
+                        year: 1804,
+                        yearText: "1804",
+                        title: "Napoleon Menjadi Kaisar",
+                        desc: "Napoleon Bonaparte menjadi kaisar Prancis.",
+                        icon: "👑"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Indonesia Awal Modern",
+
+                description:
+                    "Susun peristiwa penting dalam sejarah Indonesia.",
+
+                events: [
+
+                    {
+                        year: 1602,
+                        yearText: "1602",
+                        title: "VOC Didirikan",
+                        desc: "Perusahaan dagang Belanda didirikan.",
+                        icon: "🚢"
+                    },
+
+                    {
+                        year: 1799,
+                        yearText: "1799",
+                        title: "VOC Dibubarkan",
+                        desc: "VOC secara resmi dibubarkan.",
+                        icon: "📜"
+                    },
+
+                    {
+                        year: 1825,
+                        yearText: "1825",
+                        title: "Perang Diponegoro",
+                        desc: "Perang Jawa berlangsung 1825–1830.",
+                        icon: "⚔️"
+                    },
+
+                    {
+                        year: 1908,
+                        yearText: "1908",
+                        title: "Budi Utomo",
+                        desc: "Berdirinya organisasi Budi Utomo.",
+                        icon: "🇮🇩"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Menuju Kemerdekaan Indonesia",
+
+                description:
+                    "Urutkan tonggak perjuangan menuju kemerdekaan.",
+
+                events: [
+
+                    {
+                        year: 1928,
+                        yearText: "1928",
+                        title: "Sumpah Pemuda",
+                        desc: "Kongres Pemuda II menghasilkan Sumpah Pemuda.",
+                        icon: "🇮🇩"
+                    },
+
+                    {
+                        year: 1942,
+                        yearText: "1942",
+                        title: "Pendudukan Jepang",
+                        desc: "Jepang mengambil alih Hindia Belanda.",
+                        icon: "🎌"
+                    },
+
+                    {
+                        year: 1945,
+                        yearText: "17 Agustus 1945",
+                        title: "Proklamasi Kemerdekaan",
+                        desc: "Indonesia memproklamasikan kemerdekaan.",
+                        icon: "🇮🇩"
+                    },
+
+                    {
+                        year: 1949,
+                        yearText: "1949",
+                        title: "Pengakuan Kedaulatan",
+                        desc: "Belanda mengakui kedaulatan Indonesia.",
+                        icon: "🕊️"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Perang Dunia",
+
+                description:
+                    "Susun peristiwa besar yang membentuk abad ke-20.",
+
+                events: [
+
+                    {
+                        year: 1914,
+                        yearText: "1914",
+                        title: "Perang Dunia I",
+                        desc: "Perang Dunia I dimulai.",
+                        icon: "⚔️"
+                    },
+
+                    {
+                        year: 1918,
+                        yearText: "1918",
+                        title: "Perang Dunia I Berakhir",
+                        desc: "Gencatan senjata mengakhiri perang.",
+                        icon: "🕊️"
+                    },
+
+                    {
+                        year: 1939,
+                        yearText: "1939",
+                        title: "Perang Dunia II",
+                        desc: "Perang Dunia II dimulai di Eropa.",
+                        icon: "🌍"
+                    },
+
+                    {
+                        year: 1945,
+                        yearText: "1945",
+                        title: "Perang Dunia II Berakhir",
+                        desc: "Perang Dunia II berakhir.",
+                        icon: "☮️"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Dunia Modern",
+
+                description:
+                    "Susun peristiwa teknologi dan politik modern.",
+
+                events: [
+
+                    {
+                        year: 1957,
+                        yearText: "1957",
+                        title: "Sputnik 1",
+                        desc: "Satelit buatan pertama diluncurkan.",
+                        icon: "🛰️"
+                    },
+
+                    {
+                        year: 1969,
+                        yearText: "1969",
+                        title: "Manusia Mendarat di Bulan",
+                        desc: "Apollo 11 berhasil mendarat di Bulan.",
+                        icon: "🌕"
+                    },
+
+                    {
+                        year: 1989,
+                        yearText: "1989",
+                        title: "Tembok Berlin Runtuh",
+                        desc: "Tembok Berlin runtuh.",
+                        icon: "🧱"
+                    },
+
+                    {
+                        year: 1991,
+                        yearText: "1991",
+                        title: "Uni Soviet Bubar",
+                        desc: "Uni Soviet resmi dibubarkan.",
+                        icon: "🌍"
+                    }
+
+                ]
+            },
+
+            {
+                title: "Era Digital",
+
+                description:
+                    "Level terakhir. Susun tonggak revolusi digital.",
+
+                events: [
+
+                    {
+                        year: 1991,
+                        yearText: "1991",
+                        title: "World Wide Web",
+                        desc: "Web dibuka untuk publik.",
+                        icon: "🌐"
+                    },
+
+                    {
+                        year: 2004,
+                        yearText: "2004",
+                        title: "Era Jejaring Sosial",
+                        desc: "Platform jejaring sosial modern berkembang pesat.",
+                        icon: "💬"
+                    },
+
+                    {
+                        year: 2007,
+                        yearText: "2007",
+                        title: "Era Smartphone Modern",
+                        desc: "Smartphone modern memasuki pasar.",
+                        icon: "📱"
+                    },
+
+                    {
+                        year: 2020,
+                        yearText: "2020",
+                        title: "Pandemi COVID-19",
+                        desc: "Pandemi global mengubah kehidupan modern.",
+                        icon: "🌍"
+                    }
+
+                ]
+            }
+
+        ];
+
+        /* =========================================================
+           STATE
+           ========================================================= */
+
+        let currentLevel = 0;
+        let score = 0;
+        let bestScore = 0;
+        let lives = 3;
+        let streak = 0;
+        let timeLeft = 60;
+        let gameRunning = false;
+        let timer = null;
+        let cards = [];
+        let timeline = [];
+        let draggedEvent = null;
+
+        /* =========================================================
+           ELEMENTS
+           ========================================================= */
+
+        const scoreEl =
+            document.getElementById("score");
+
+        const bestEl =
+            document.getElementById("best");
+
+        const levelEl =
+            document.getElementById("level");
+
+        const timeEl =
+            document.getElementById("time");
+
+        const livesEl =
+            document.getElementById("lives");
+
+        const levelBadge =
+            document.getElementById("levelBadge");
+
+        const questionTitle =
+            document.getElementById("questionTitle");
+
+        const questionDescription =
+            document.getElementById("questionDescription");
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const streakText =
+            document.getElementById("streakText");
+
+        const timelineEl =
+            document.getElementById("timeline");
+
+        const cardsEl =
+            document.getElementById("cards");
+
+        const overlay =
+            document.getElementById("overlay");
+
+        const modalIcon =
+            document.getElementById("modalIcon");
+
+        const modalTitle =
+            document.getElementById("modalTitle");
+
+        const modalText =
+            document.getElementById("modalText");
+
+        const modalScore =
+            document.getElementById("modalScore");
+
+        const modalStat =
+            document.getElementById("modalStat");
+
+        const startBtn =
+            document.getElementById("startBtn");
+
+        const resetBtn =
+            document.getElementById("resetBtn");
+
+        const checkBtn =
+            document.getElementById("checkBtn");
+
+        const toast =
+            document.getElementById("toast");
+
+        /* =========================================================
+           AUDIO
+           ========================================================= */
+
+        let audioCtx = null;
+
+        function initAudio() {
+
+            if (audioCtx) {
+                return;
+            }
+
+            try {
+
+                audioCtx =
+                    new (
+                        window.AudioContext ||
+                        window.webkitAudioContext
+                    )();
+
+            } catch (e) {
+
+                audioCtx = null;
+
+            }
+        }
+
+        function sound(
+            frequency,
+            duration = .08,
+            type = "sine",
+            volume = .035
+        ) {
+
+            if (!audioCtx) {
+                return;
+            }
+
+            try {
+
+                const osc =
+                    audioCtx.createOscillator();
+
+                const gain =
+                    audioCtx.createGain();
+
+                osc.type = type;
+                osc.frequency.value = frequency;
+
+                gain.gain.value = volume;
+
+                gain.gain.exponentialRampToValueAtTime(
+                    .0001,
+                    audioCtx.currentTime + duration
+                );
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+
+                osc.stop(
+                    audioCtx.currentTime + duration
+                );
+
+            } catch (e) {}
+        }
+
+        function soundCorrect() {
+
+            sound(523, .09, "sine", .045);
+
+            setTimeout(
+                () => sound(659, .10, "sine", .045),
+                70
+            );
+
+            setTimeout(
+                () => sound(784, .14, "sine", .045),
+                140
+            );
+        }
+
+        function soundWrong() {
+
+            sound(
+                180,
+                .12,
+                "sawtooth",
+                .035
+            );
+
+            setTimeout(
+                () => sound(
+                    130,
+                    .18,
+                    "sawtooth",
+                    .03
+                ),
+                100
+            );
+        }
+
+        function soundWin() {
+
+            [
+                523,
+                659,
+                784,
+                1047,
+                1319
+            ].forEach(
+                (frequency, index) => {
+
+                    setTimeout(
+                        () =>
+                            sound(
+                                frequency,
+                                .15,
+                                "sine",
+                                .05
+                            ),
+                        index * 110
+                    );
+
+                }
+            );
+        }
+
+        /* =========================================================
+           STORAGE
+           ========================================================= */
+
+        function loadBest() {
+
+            try {
+
+                bestScore =
+                    parseInt(
+                        localStorage.getItem(
+                            "history_timeline_best"
+                        ) || "0",
+                        10
+                    );
+
+            } catch (e) {
+
+                bestScore = 0;
+
+            }
+
+            bestEl.textContent =
+                bestScore.toLocaleString("id-ID");
+        }
+
+        function saveBest() {
+
+            if (score > bestScore) {
+
+                bestScore = score;
+
+                try {
+
+                    localStorage.setItem(
+                        "history_timeline_best",
+                        String(bestScore)
+                    );
+
+                } catch (e) {}
+
+                bestEl.textContent =
+                    bestScore.toLocaleString("id-ID");
+            }
+        }
+
+        /* =========================================================
+           UTILITY
+           ========================================================= */
+
+        function shuffle(array) {
+
+            const result = [...array];
+
+            for (
+                let i = result.length - 1;
+                i > 0;
+                i--
+            ) {
+
+                const j =
+                    Math.floor(
+                        Math.random() * (i + 1)
+                    );
+
+                [
+                    result[i],
+                    result[j]
+                ] = [
+                    result[j],
+                    result[i]
+                ];
+            }
+
+            return result;
+        }
+
+        function showToast(text) {
+
+            toast.textContent = text;
+
+            toast.classList.remove("show");
+
+            void toast.offsetWidth;
+
+            toast.classList.add("show");
+        }
+
+        function updateHUD() {
+
+            scoreEl.textContent =
+                score.toLocaleString("id-ID");
+
+            bestEl.textContent =
+                bestScore.toLocaleString("id-ID");
+
+            levelEl.textContent =
+                `${currentLevel + 1}/10`;
+
+            timeEl.textContent =
+                timeLeft;
+
+            livesEl.textContent =
+                "❤️".repeat(lives);
+
+            progressText.textContent =
+                `Level ${currentLevel + 1} dari 10`;
+
+            streakText.textContent =
+                `🔥 Streak ${streak}`;
+
+            progressFill.style.width =
+                `${(currentLevel / 10) * 100}%`;
+        }
+
+        /* =========================================================
+           TIMER
+           ========================================================= */
+
+        function startTimer() {
+
+            stopTimer();
+
+            timer =
+                setInterval(
+                    () => {
+
+                        if (!gameRunning) {
+                            return;
+                        }
+
+                        timeLeft--;
+
+                        updateHUD();
+
+                        if (timeLeft <= 0) {
+
+                            timeLeft = 0;
+
+                            updateHUD();
+
+                            handleTimeOut();
+                        }
+
+                    },
+                    1000
+                );
+        }
+
+        function stopTimer() {
+
+            if (timer) {
+
+                clearInterval(timer);
+
+                timer = null;
+            }
+        }
+
+        /* =========================================================
+           START GAME
+           ========================================================= */
+
+        function startGame() {
+
+            initAudio();
+
+            if (
+                audioCtx &&
+                audioCtx.state === "suspended"
+            ) {
+
+                audioCtx.resume();
+            }
+
+            currentLevel = 0;
+            score = 0;
+            lives = 3;
+            streak = 0;
+            timeLeft = 60;
+
+            gameRunning = true;
+
+            overlay.classList.add("hidden");
+
+            loadLevel();
+
+            startTimer();
+        }
+
+        /* =========================================================
+           LOAD LEVEL
+           ========================================================= */
+
+        function loadLevel() {
+
+            const level =
+                LEVELS[currentLevel];
+
+            levelBadge.textContent =
+                `LEVEL ${currentLevel + 1} · ${level.title}`;
+
+            questionTitle.textContent =
+                level.title;
+
+            questionDescription.textContent =
+                level.description;
+
+            cards =
+                shuffle(level.events);
+
+            timeline =
+                new Array(
+                    level.events.length
+                ).fill(null);
+
+            renderGame();
+
+            updateHUD();
+        }
+
+        /* =========================================================
+           RENDER
+           ========================================================= */
+
+        function renderGame() {
+
+            timelineEl.innerHTML = "";
+            cardsEl.innerHTML = "";
+
+            timeline.forEach(
+                (event, index) => {
+
+                    const slot =
+                        document.createElement("div");
+
+                    slot.className =
+                        "timeline-slot";
+
+                    slot.dataset.index =
+                        index;
+
+                    const label =
+                        document.createElement("div");
+
+                    label.className =
+                        "slot-label";
+
+                    label.textContent =
+                        `POSISI ${index + 1}`;
+
+                    slot.appendChild(label);
+
+                    if (event) {
+
+                        slot.appendChild(
+                            createCard(
+                                event,
+                                true
+                            )
+                        );
+                    }
+
+                    setupDropZone(slot);
+
+                    timelineEl.appendChild(slot);
+                }
+            );
+
+            cards.forEach(
+                event => {
+
+                    if (
+                        !timeline.includes(event)
+                    ) {
+
+                        cardsEl.appendChild(
+                            createCard(
+                                event,
+                                false
+                            )
+                        );
+                    }
+                }
+            );
+        }
+
+        /* =========================================================
+           CREATE CARD
+           ========================================================= */
+
+        function createCard(
+            event,
+            inTimeline
+        ) {
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "event-card";
+
+            card.draggable = true;
+
+            card.dataset.year =
+                event.year;
+
+            card.dataset.id =
+                `${event.year}-${event.title}`;
+
+            card.innerHTML = `
+                <div class="event-icon">
+                    ${event.icon}
+                </div>
+
+                <div class="event-year">
+                    ${event.yearText}
+                </div>
+
+                <div class="event-title">
+                    ${event.title}
+                </div>
+
+                <div class="event-desc">
+                    ${event.desc}
+                </div>
+            `;
+
+            setupDrag(card, event);
+
+            /* Touch / click fallback */
+
+            card.addEventListener(
+                "click",
+                () => {
+
+                    if (!gameRunning) {
+                        return;
+                    }
+
+                    if (inTimeline) {
+
+                        removeFromTimeline(event);
+
+                    } else {
+
+                        placeEventInFirstEmpty(event);
+                    }
+                }
+            );
+
+            return card;
+        }
+
+        /* =========================================================
+           DRAG & DROP
+           ========================================================= */
+
+        function setupDrag(
+            card,
+            event
+        ) {
+
+            card.addEventListener(
+                "dragstart",
+                e => {
+
+                    draggedEvent = event;
+
+                    card.classList.add(
+                        "dragging"
+                    );
+
+                    try {
+
+                        e.dataTransfer.effectAllowed =
+                            "move";
+
+                    } catch (err) {}
+                }
+            );
+
+            card.addEventListener(
+                "dragend",
+                () => {
+
+                    card.classList.remove(
+                        "dragging"
+                    );
+
+                    draggedEvent = null;
+                }
+            );
+        }
+
+        function setupDropZone(slot) {
+
+            slot.addEventListener(
+                "dragover",
+                e => {
+
+                    e.preventDefault();
+
+                    slot.classList.add(
+                        "drag-over"
+                    );
+                }
+            );
+
+            slot.addEventListener(
+                "dragleave",
+                () => {
+
+                    slot.classList.remove(
+                        "drag-over"
+                    );
+                }
+            );
+
+            slot.addEventListener(
+                "drop",
+                e => {
+
+                    e.preventDefault();
+
+                    slot.classList.remove(
+                        "drag-over"
+                    );
+
+                    if (!draggedEvent) {
+                        return;
+                    }
+
+                    placeEvent(
+                        draggedEvent,
+                        parseInt(
+                            slot.dataset.index,
+                            10
+                        )
+                    );
+                }
+            );
+        }
+
+        /* =========================================================
+           PLACE EVENT
+           ========================================================= */
+
+        function placeEvent(
+            event,
+            index
+        ) {
+
+            if (!gameRunning) {
+                return;
+            }
+
+            const oldIndex =
+                timeline.indexOf(event);
+
+            if (oldIndex !== -1) {
+                timeline[oldIndex] = null;
+            }
+
+            const existing =
+                timeline[index];
+
+            if (existing) {
+
+                if (oldIndex !== -1) {
+
+                    timeline[oldIndex] =
+                        existing;
+
+                } else {
+
+                    cards.push(existing);
+                }
+            }
+
+            timeline[index] =
+                event;
+
+            cards =
+                cards.filter(
+                    e => e !== event
+                );
+
+            renderGame();
+        }
+
+        /* =========================================================
+           CLICK PLACEMENT
+           ========================================================= */
+
+        function placeEventInFirstEmpty(
+            event
+        ) {
+
+            const index =
+                timeline.indexOf(null);
+
+            if (index === -1) {
+
+                showToast(
+                    "Semua posisi sudah terisi!"
+                );
+
+                return;
+            }
+
+            placeEvent(
+                event,
+                index
+            );
+        }
+
+        function removeFromTimeline(
+            event
+        ) {
+
+            const index =
+                timeline.indexOf(event);
+
+            if (index === -1) {
+                return;
+            }
+
+            timeline[index] = null;
+
+            cards.push(event);
+
+            renderGame();
+        }
+
+        /* =========================================================
+           RESET
+           ========================================================= */
+
+        function resetLevel() {
+
+            if (!gameRunning) {
+                return;
+            }
+
+            cards =
+                shuffle(
+                    LEVELS[currentLevel].events
+                );
+
+            timeline =
+                new Array(
+                    LEVELS[currentLevel]
+                        .events.length
+                ).fill(null);
+
+            renderGame();
+
+            showToast(
+                "🔀 Kartu diacak ulang"
+            );
+        }
+
+        /* =========================================================
+           CHECK ANSWER
+           ========================================================= */
+
+        function checkAnswer() {
+
+            if (!gameRunning) {
+                return;
+            }
+
+            if (
+                timeline.some(
+                    event => event === null
+                )
+            ) {
+
+                showToast(
+                    "⚠️ Isi semua posisi terlebih dahulu!"
+                );
+
+                return;
+            }
+
+            const correctOrder =
+                [...LEVELS[currentLevel].events]
+                    .sort(
+                        (a, b) =>
+                            a.year - b.year
+                    );
+
+            let correct = true;
+
+            for (
+                let i = 0;
+                i < correctOrder.length;
+                i++
+            ) {
+
+                if (
+                    timeline[i].year !==
+                    correctOrder[i].year
+                ) {
+
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct) {
+
+                handleCorrect();
+
+            } else {
+
+                handleWrong();
+            }
+        }
+
+        /* =========================================================
+           CORRECT
+           ========================================================= */
+
+        function handleCorrect() {
+
+            soundCorrect();
+
+            streak++;
+
+            const baseScore =
+                100;
+
+            const timeBonus =
+                timeLeft * 5;
+
+            const streakBonus =
+                Math.min(
+                    streak * 25,
+                    250
+                );
+
+            const levelBonus =
+                (currentLevel + 1) * 50;
+
+            const gained =
+                baseScore +
+                timeBonus +
+                streakBonus +
+                levelBonus;
+
+            score += gained;
+
+            saveBest();
+
+            showToast(
+                `🎉 BENAR! +${gained} poin`
+            );
+
+            timelineEl.classList.add(
+                "correct"
+            );
+
+            setTimeout(
+                () => {
+
+                    timelineEl.classList.remove(
+                        "correct"
+                    );
+
+                },
+                600
+            );
+
+            updateHUD();
+
+            setTimeout(
+                nextLevel,
+                1000
+            );
+        }
+
+        /* =========================================================
+           WRONG
+           ========================================================= */
+
+        function handleWrong() {
+
+            soundWrong();
+
+            lives--;
+
+            streak = 0;
+
+            score =
+                Math.max(
+                    0,
+                    score - 50
+                );
+
+            showToast(
+                "❌ Belum tepat! -50 poin"
+            );
+
+            timelineEl.classList.add(
+                "wrong"
+            );
+
+            setTimeout(
+                () => {
+
+                    timelineEl.classList.remove(
+                        "wrong"
+                    );
+
+                },
+                600
+            );
+
+            updateHUD();
+
+            if (lives <= 0) {
+
+                setTimeout(
+                    gameOver,
+                    800
+                );
+            }
+        }
+
+        /* =========================================================
+           TIME OUT
+           ========================================================= */
+
+        function handleTimeOut() {
+
+            if (!gameRunning) {
+                return;
+            }
+
+            lives--;
+
+            streak = 0;
+
+            showToast(
+                "⏰ Waktu habis!"
+            );
+
+            if (lives <= 0) {
+
+                setTimeout(
+                    gameOver,
+                    800
+                );
+
+                return;
+            }
+
+            timeLeft =
+                Math.max(
+                    30,
+                    60 - currentLevel * 3
+                );
+
+            renderGame();
+
+            updateHUD();
+        }
+
+        /* =========================================================
+           NEXT LEVEL
+           ========================================================= */
+
+        function nextLevel() {
+
+            if (!gameRunning) {
+                return;
+            }
+
+            if (
+                currentLevel >=
+                LEVELS.length - 1
+            ) {
+
+                winGame();
+
+                return;
+            }
+
+            currentLevel++;
+
+            timeLeft =
+                Math.max(
+                    35,
+                    60 - currentLevel * 3
+                );
+
+            showToast(
+                `🏆 LEVEL ${currentLevel + 1}!`
+            );
+
+            loadLevel();
+        }
+
+        /* =========================================================
+           GAME OVER
+           ========================================================= */
+
+        function gameOver() {
+
+            gameRunning = false;
+
+            stopTimer();
+
+            saveBest();
+
+            modalIcon.textContent =
+                "💀";
+
+            modalTitle.textContent =
+                "GAME OVER";
+
+            modalText.textContent =
+                "Perjalanan sejarahmu berhenti di sini.";
+
+            modalScore.textContent =
+                score.toLocaleString("id-ID");
+
+            modalStat.textContent =
+                `Berhasil mencapai Level ${
+                    currentLevel + 1
+                } dari 10.`;
+
+            startBtn.textContent =
+                "🔄 MAIN LAGI";
+
+            overlay.classList.remove(
+                "hidden"
+            );
+
+            saveScore(score);
+        }
+
+        /* =========================================================
+           WIN
+           ========================================================= */
+
+        function winGame() {
+
+            gameRunning = false;
+
+            stopTimer();
+
+            soundWin();
+
+            score += 1000;
+
+            saveBest();
+
+            progressFill.style.width =
+                "100%";
+
+            modalIcon.textContent =
+                "🏆";
+
+            modalTitle.textContent =
+                "YOU WIN!";
+
+            modalText.textContent =
+                "Luar biasa! Kamu berhasil menaklukkan seluruh 10 level History Timeline.";
+
+            modalScore.textContent =
+                score.toLocaleString("id-ID");
+
+            modalStat.textContent =
+                `🔥 Streak terbaik: ${streak} · Semua 10 level selesai`;
+
+            startBtn.textContent =
+                "🔄 MAIN LAGI";
+
+            overlay.classList.remove(
+                "hidden"
+            );
+
+            saveScore(score);
+        }
+
+        /* =========================================================
+           SAVE SCORE TO BACKEND
+           ========================================================= */
+
+        function saveScore(finalScore) {
+
+            if (
+                !finalScore ||
+                finalScore <= 0
+            ) {
+                return;
+            }
+
+            fetch(
+                "/api/scores",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        slug:
+                            "history-timeline",
+
+                        score:
+                            finalScore
+                    })
+                }
+            )
+            .catch(
+                () => {
+                    /*
+                     * Game tetap berjalan
+                     * walaupun API belum tersedia.
+                     */
+                }
+            );
+        }
+
+        /* =========================================================
+           BUTTONS
+           ========================================================= */
+
+        startBtn.addEventListener(
+            "click",
+            startGame
+        );
+
+        resetBtn.addEventListener(
+            "click",
+            resetLevel
+        );
+
+        checkBtn.addEventListener(
+            "click",
+            checkAnswer
+        );
+
+        /* =========================================================
+           KEYBOARD
+           ========================================================= */
+
+        document.addEventListener(
+            "keydown",
+            e => {
+
+                if (
+                    e.key === "Enter" &&
+                    !gameRunning
+                ) {
+
+                    startGame();
+
+                    return;
+                }
+
+                if (
+                    e.key.toLowerCase() === "r" &&
+                    gameRunning
+                ) {
+
+                    resetLevel();
+                }
+            }
+        );
+
+        /* =========================================================
+           INITIALIZE
+           ========================================================= */
+
+        loadBest();
+
+        updateHUD();
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flappy Bird Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+html, body {
+    width: 100%; height: 100%; overflow: hidden; position: fixed;
+    background: #0a0e27; color: #fff; touch-action: none;
+}
+
+body { display: flex; justify-content: center; align-items: center; }
+
+/* ===== BACKGROUND SKY ===== */
+.sky {
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(180deg, #4ec0ca 0%, #70c5ce 50%, #a8e6cf 100%);
+    transition: background 0.8s ease;
+}
+.sky.level-1  { background: linear-gradient(180deg, #4ec0ca 0%, #70c5ce 50%, #a8e6cf 100%); }
+.sky.level-2  { background: linear-gradient(180deg, #4ec0ca 0%, #87ceeb 50%, #b0e0e6 100%); }
+.sky.level-3  { background: linear-gradient(180deg, #ff9a56 0%, #ffb347 50%, #ffe4b5 100%); }
+.sky.level-4  { background: linear-gradient(180deg, #6a5acd 0%, #9370db 50%, #dda0dd 100%); }
+.sky.level-5  { background: linear-gradient(180deg, #2c3e50 0%, #34495e 50%, #5d6d7e 100%); }
+.sky.level-6  { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+.sky.level-7  { background: linear-gradient(180deg, #8b0000 0%, #b22222 50%, #ff6347 100%); }
+.sky.level-8  { background: linear-gradient(180deg, #006400 0%, #228b22 50%, #90ee90 100%); }
+.sky.level-9  { background: linear-gradient(180deg, #4b0082 0%, #8a2be2 50%, #da70d6 100%); }
+.sky.level-10 { background: linear-gradient(180deg, #000000 0%, #1a0033 50%, #330066 100%); }
+
+/* Bintang untuk level gelap */
+.sky.level-6::after,
+.sky.level-10::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(1px 1px at 60% 70%, white, transparent),
+        radial-gradient(2px 2px at 80% 20%, white, transparent),
+        radial-gradient(1px 1px at 40% 80%, white, transparent),
+        radial-gradient(1px 1px at 90% 50%, white, transparent);
+    animation: twinkle 3s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+    0% { opacity: 0.3; }
+    100% { opacity: 0.9; }
+}
+
+/* ===== CLOUDS ===== */
+.clouds {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+}
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    animation: floatCloud linear infinite;
+}
+.cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: inherit;
+    border-radius: 50%;
+}
+.cloud::before { width: 60%; height: 100%; top: -40%; left: 20%; }
+.cloud::after  { width: 40%; height: 80%; top: -20%; left: 50%; }
+
+@keyframes floatCloud {
+    from { transform: translateX(100vw); }
+    to   { transform: translateX(-150px); }
+}
+
+/* ===== GAME CONTAINER ===== */
+.game-container {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 8px; width: 100%; height: 100%;
+}
+
+.title {
+    font-size: 1.4rem; font-weight: 800;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    letter-spacing: 2px; text-transform: uppercase;
+}
+
+/* ===== HUD ===== */
+.hud {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 500px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px; border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.hud-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hud-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+.hud-value { font-size: 15px; font-weight: 700; }
+.hud .score  .hud-value { color: #fbbf24; }
+.hud .best   .hud-value { color: #4ade80; }
+.hud .level  .hud-value { color: #22d3ee; }
+.hud .pipes  .hud-value { color: #f472b6; }
+
+/* ===== PROGRESS BAR ===== */
+.level-progress {
+    width: 100%; max-width: 500px; height: 5px;
+    background: rgba(15, 23, 42, 0.75);
+    border-radius: 3px; overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.level-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #22d3ee, #fbbf24);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+/* ===== CANVAS ===== */
+.canvas-wrapper {
+    position: relative; display: inline-block;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+canvas {
+    display: block;
+    background: transparent;
+    touch-action: none;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* ===== OVERLAY ===== */
+.overlay {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 20px;
+    z-index: 10;
+    animation: popIn 0.3s ease;
+}
+@keyframes popIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.overlay.hidden { display: none; }
+
+.overlay h1 {
+    font-size: 1.8rem; margin-bottom: 12px;
+    color: #fbbf24;
+    text-shadow: 2px 2px 0 #000;
+    letter-spacing: 2px;
+    font-weight: 900;
+}
+.overlay h1.dead { color: #ef4444; }
+.overlay h1.win  { color: #22c55e; }
+
+.overlay p {
+    margin-bottom: 8px; font-size: 13px;
+    color: #cbd5e1; line-height: 1.5;
+    max-width: 320px;
+}
+
+.overlay .final-score {
+    font-size: 2.5rem; font-weight: 900; color: #fbbf24;
+    margin: 12px 0; text-shadow: 2px 2px 0 #000, 0 0 30px rgba(251, 191, 36, 0.6);
+}
+
+.overlay button {
+    padding: 12px 32px;
+    background: linear-gradient(180deg, #fbbf24, #f59e0b);
+    color: #000; border: 3px solid #000; border-radius: 10px;
+    font-size: 15px; font-weight: 900; cursor: pointer;
+    margin-top: 12px; transition: all 0.2s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 0 #000;
+}
+.overlay button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #000;
+}
+.overlay button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #000;
+}
+
+/* ===== LEVEL BADGE ===== */
+.level-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    background: rgba(34, 211, 238, 0.2);
+    border: 2px solid #22d3ee;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #22d3ee;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* ===== TOAST ===== */
+.level-toast {
+    position: fixed; top: 15%; left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #000; padding: 14px 28px; border-radius: 14px;
+    font-size: 16px; font-weight: 900; letter-spacing: 1px;
+    z-index: 100; border: 3px solid #000;
+    box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4);
+    pointer-events: none; text-align: center;
+    text-transform: uppercase;
+}
+.level-toast.show { animation: toastPop 2s ease forwards; }
+@keyframes toastPop {
+    0%   { transform: translateX(-50%) scale(0)   rotate(-10deg); opacity: 0; }
+    15%  { transform: translateX(-50%) scale(1.2) rotate(5deg);   opacity: 1; }
+    25%  { transform: translateX(-50%) scale(1)   rotate(0deg);   opacity: 1; }
+    85%  { transform: translateX(-50%) scale(1)   rotate(0deg);   opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.8) rotate(5deg);   opacity: 0; }
+}
+
+/* ===== START HINT ===== */
+.tap-hint {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 700;
+    text-shadow: 2px 2px 0 #000;
+    animation: pulse 1.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 5;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+    .title { font-size: 1.1rem; }
+    .hud { font-size: 11px; padding: 6px 10px; }
+    .hud-value { font-size: 13px; }
+    .overlay h1 { font-size: 1.4rem; }
+    .overlay .final-score { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="sky level-1" id="skyBg"></div>
+<div class="clouds" id="clouds"></div>
+
+<div class="game-container">
+    <div class="title">🐦 Flappy Adventure</div>
+
+    <div class="hud">
+        <div class="hud-item score">
+            <span class="hud-label">Skor</span>
+            <span class="hud-value" id="score">0</span>
+        </div>
+        <div class="hud-item best">
+            <span class="hud-label">Terbaik</span>
+            <span class="hud-value" id="best">0</span>
+        </div>
+        <div class="hud-item level">
+            <span class="hud-label">Level</span>
+            <span class="hud-value" id="levelDisplay">1/10</span>
+        </div>
+        <div class="hud-item pipes">
+            <span class="hud-label">Pipa</span>
+            <span class="hud-value" id="pipesCount">0/5</span>
+        </div>
+    </div>
+
+    <div class="level-progress">
+        <div class="level-progress-fill" id="levelProgress"></div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+        <div id="overlay" class="overlay">
+            <div class="level-badge" id="levelBadge">LEVEL 1 · PADANG RUMPUT</div>
+            <h1>🐦 Flappy Adventure</h1>
+            <p><strong>10 Level</strong> dengan latar berbeda!</p>
+            <p>Tap layar atau tekan <strong>SPACE</strong> untuk terbang</p>
+            <button id="startBtn" type="button">▶ Mulai Terbang</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="level-toast"></div>
+
+<script>
+// ============================================================
+// FLAPPY ADVENTURE - 10 Level
+// ============================================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const levelDisplay = document.getElementById('levelDisplay');
+const pipesCountEl = document.getElementById('pipesCount');
+const levelProgress = document.getElementById('levelProgress');
+const overlay = document.getElementById('overlay');
+const levelBadge = document.getElementById('levelBadge');
+const startBtn = document.getElementById('startBtn');
+const toast = document.getElementById('toast');
+const skyBg = document.getElementById('skyBg');
+const cloudsContainer = document.getElementById('clouds');
+
+const W = canvas.width;
+const H = canvas.height;
+
+// ============================================================
+// KONFIGURASI 10 LEVEL
+// ============================================================
+const LEVELS = [
+    { name: 'Padang Rumput',  bg: '#4ec0ca', pipe: '#5eae3a', gap: 180, speed: 2.0, pipesNeeded: 5,  pipeWidth: 60 },
+    { name: 'Langit Biru',    bg: '#87ceeb', pipe: '#228b22', gap: 170, speed: 2.2, pipesNeeded: 5,  pipeWidth: 60 },
+    { name: 'Matahari Senja', bg: '#ffb347', pipe: '#8b4513', gap: 160, speed: 2.5, pipesNeeded: 6,  pipeWidth: 58 },
+    { name: 'Senja Ungu',     bg: '#9370db', pipe: '#4b0082', gap: 155, speed: 2.7, pipesNeeded: 6,  pipeWidth: 58 },
+    { name: 'Malam Kota',     bg: '#34495e', pipe: '#1a252f', gap: 150, speed: 3.0, pipesNeeded: 7,  pipeWidth: 56 },
+    { name: 'Luar Angkasa',   bg: '#16213e', pipe: '#4a5568', gap: 145, speed: 3.2, pipesNeeded: 7,  pipeWidth: 56 },
+    { name: 'Lava Panas',     bg: '#b22222', pipe: '#4a0000', gap: 140, speed: 3.5, pipesNeeded: 8,  pipeWidth: 54 },
+    { name: 'Hutan Rimba',    bg: '#228b22', pipe: '#654321', gap: 135, speed: 3.7, pipesNeeded: 8,  pipeWidth: 54 },
+    { name: 'Nebula Mistis',  bg: '#8a2be2', pipe: '#2c0e4f', gap: 130, speed: 4.0, pipesNeeded: 9,  pipeWidth: 52 },
+    { name: 'MASTER',         bg: '#000000', pipe: '#ff0080', gap: 125, speed: 4.5, pipesNeeded: 10, pipeWidth: 50 }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let bird, pipes, particles, score, pipesPassed, currentLevel;
+let gameLoop, isRunning, isPaused, levelTransitioning;
+let groundOffset, frameCount;
+let bestScore = 0;
+
+// ============================================================
+// AUDIO (Web Audio API)
+// ============================================================
+let audioCtx;
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { audioCtx = null; }
+    }
+}
+
+function playSound(freq, duration, type = 'sine', volume = 0.06) {
+    if (!audioCtx) return;
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = volume;
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+}
+
+const SFX = {
+    flap: () => playSound(500, 0.06, 'sine', 0.05),
+    point: () => { playSound(880, 0.06, 'square', 0.05); setTimeout(() => playSound(1100, 0.08, 'square', 0.05), 50); },
+    hit: () => playSound(150, 0.15, 'sawtooth', 0.1),
+    die: () => { playSound(220, 0.15, 'sawtooth', 0.1); setTimeout(() => playSound(110, 0.4, 'sawtooth', 0.1), 150); },
+    levelUp: () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playSound(f, 0.15), i * 100)); },
+    win: () => { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => playSound(f, 0.2), i * 130)); }
+};
+
+// ============================================================
+// CLOUDS (background bergerak)
+// ============================================================
+function createClouds() {
+    cloudsContainer.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'cloud';
+        const size = 40 + Math.random() * 60;
+        cloud.style.width = size + 'px';
+        cloud.style.height = size * 0.5 + 'px';
+        cloud.style.top = (10 + Math.random() * 40) + '%';
+        cloud.style.animationDuration = (20 + Math.random() * 20) + 's';
+        cloud.style.animationDelay = (-Math.random() * 30) + 's';
+        cloudsContainer.appendChild(cloud);
+    }
+}
+
+// ============================================================
+// FIT CANVAS
+// ============================================================
+function fitCanvas() {
+    const maxW = Math.min(window.innerWidth - 30, 400);
+    const maxH = Math.min(window.innerHeight - 200, 600);
+    const ratio = W / H;
+    let cw = maxW, ch = cw / ratio;
+    if (ch > maxH) { ch = maxH; cw = ch * ratio; }
+    canvas.style.width = cw + 'px';
+    canvas.style.height = ch + 'px';
+}
+window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', () => setTimeout(fitCanvas, 200));
+
+// ============================================================
+// LEVEL HELPERS
+// ============================================================
+function getLevelConfig() { return LEVELS[Math.min(currentLevel - 1, LEVELS.length - 1)]; }
+
+function updateLevelUI() {
+    const cfg = getLevelConfig();
+    levelDisplay.textContent = `${currentLevel}/10`;
+    pipesCountEl.textContent = `${pipesPassed}/${cfg.pipesNeeded}`;
+    levelProgress.style.width = `${(pipesPassed / cfg.pipesNeeded) * 100}%`;
+    skyBg.className = `sky level-${currentLevel}`;
+    levelBadge.textContent = `LEVEL ${currentLevel} · ${cfg.name.toUpperCase()}`;
+}
+
+function showToast(text) {
+    toast.textContent = text;
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function spawnParticles(x, y, color, count = 10) {
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+        const sp = 1 + Math.random() * 3;
+        particles.push({
+            x, y,
+            vx: Math.cos(angle) * sp,
+            vy: Math.sin(angle) * sp,
+            life: 1, color, size: 2 + Math.random() * 3
+        });
+    }
+}
+
+function updateParticles() {
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        p.vx *= 0.96; p.vy *= 0.96;
+        p.vy += 0.1;
+        p.life -= 0.03;
+    });
+}
+
+function drawParticles() {
+    particles.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+}
+
+// ============================================================
+// INIT GAME
+// ============================================================
+function initGame() {
+    initAudio();
+    currentLevel = 1;
+    score = 0;
+    pipesPassed = 0;
+    particles = [];
+    pipes = [];
+    groundOffset = 0;
+    frameCount = 0;
+
+    const cfg = getLevelConfig();
+
+    bird = {
+        x: 80,
+        y: H / 2,
+        vy: 0,
+        gravity: 0.5,
+        jump: -8,
+        radius: 14,
+        rotation: 0,
+        wingPhase: 0
+    };
+
+    scoreEl.textContent = '0';
+    updateLevelUI();
+    updateBestUI();
+
+    // Spawn pipa pertama
+    spawnPipe(W + 100);
+
+    overlay.classList.add('hidden');
+    isRunning = true;
+    isPaused = false;
+    levelTransitioning = false;
+
+    clearInterval(gameLoop);
+    gameLoop = setInterval(update, 1000 / 60);
+    draw();
+}
+
+function updateBestUI() {
+    bestScore = parseInt(localStorage.getItem('flappy_best') || '0');
+    bestEl.textContent = bestScore;
+}
+
+// ============================================================
+// SPAWN PIPE
+// ============================================================
+function spawnPipe(xPos) {
+    const cfg = getLevelConfig();
+    const minTop = 60;
+    const maxTop = H - cfg.gap - 120;
+    const topHeight = minTop + Math.random() * (maxTop - minTop);
+
+    pipes.push({
+        x: xPos,
+        w: cfg.pipeWidth,
+        topHeight: topHeight,
+        gap: cfg.gap,
+        passed: false,
+        color: cfg.pipe
+    });
+}
+
+// ============================================================
+// UPDATE
+// ============================================================
+function update() {
+    if (isPaused || levelTransitioning) return;
+    frameCount++;
+
+    const cfg = getLevelConfig();
+
+    // Bird physics
+    bird.vy += bird.gravity;
+    bird.y += bird.vy;
+
+    // Rotasi burung
+    bird.rotation = Math.min(Math.PI / 2, Math.max(-Math.PI / 4, bird.vy * 0.05));
+    bird.wingPhase += 0.3;
+
+    // Ground / ceiling collision
+    if (bird.y + bird.radius >= H - 20) {
+        bird.y = H - 20 - bird.radius;
+        return gameOver('Menabrak tanah!');
+    }
+    if (bird.y - bird.radius <= 0) {
+        bird.y = bird.radius;
+        bird.vy = 0;
+    }
+
+    // Move pipes
+    for (const p of pipes) {
+        p.x -= cfg.speed;
+
+        // Skor saat lewat
+        if (!p.passed && p.x + p.w < bird.x - bird.radius) {
+            p.passed = true;
+            score++;
+            pipesPassed++;
+            scoreEl.textContent = score;
+            SFX.point();
+            spawnParticles(bird.x, bird.y, '#fbbf24', 8);
+            updateLevelUI();
+
+            // Cek naik level
+            if (pipesPassed >= cfg.pipesNeeded) {
+                nextLevel();
+                return;
+            }
+        }
+    }
+
+    // Hapus pipa yang keluar layar
+    pipes = pipes.filter(p => p.x + p.w > -50);
+
+    // Spawn pipa baru
+    const lastPipe = pipes[pipes.length - 1];
+    if (!lastPipe || lastPipe.x < W - 200) {
+        spawnPipe(W + 50);
+    }
+
+    // Collision dengan pipa
+    for (const p of pipes) {
+        if (checkPipeCollision(p)) {
+            return gameOver('Menabrak pipa!');
+        }
+    }
+
+    // Ground scroll
+    groundOffset = (groundOffset + cfg.speed) % 20;
+
+    // Particles
+    updateParticles();
+    draw();
+}
+
+function checkPipeCollision(p) {
+    // Cek tabrakan dengan pipa atas
+    if (bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + p.w) {
+        if (bird.y - bird.radius < p.topHeight) return true;
+        if (bird.y + bird.radius > p.topHeight + p.gap) return true;
+    }
+    return false;
+}
+
+// ============================================================
+// NEXT LEVEL
+// ============================================================
+function nextLevel() {
+    if (currentLevel >= 10) return winGame();
+
+    levelTransitioning = true;
+    isPaused = true;
+    SFX.levelUp();
+
+    const next = currentLevel + 1;
+    showToast(`🎉 LEVEL ${next}!`);
+
+    setTimeout(() => {
+        currentLevel = next;
+        pipesPassed = 0;
+        pipes = [];
+        particles = [];
+
+        const cfg = getLevelConfig();
+        bird.y = H / 2;
+        bird.vy = 0;
+
+        updateLevelUI();
+        spawnPipe(W + 100);
+
+        isPaused = false;
+        levelTransitioning = false;
+        draw();
+    }, 2000);
+}
+
+// ============================================================
+// DRAW
+// ============================================================
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    const cfg = getLevelConfig();
+
+    // Ground
+    ctx.fillStyle = '#5eae3a';
+    ctx.fillRect(0, H - 20, W, 20);
+    ctx.fillStyle = '#4a8c2a';
+    for (let i = 0; i < 20; i++) {
+        const x = (i * 20 - groundOffset) % (W + 20);
+        ctx.fillRect(x, H - 20, 10, 3);
+    }
+
+    // Pipes
+    for (const p of pipes) {
+        drawPipe(p);
+    }
+
+    // Bird
+    drawBird();
+
+    // Particles
+    drawParticles();
+
+    // Petunjuk tap
+    if (isRunning && !isPaused && frameCount < 30 && !levelTransitioning) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('TAP untuk terbang!', W / 2, H / 2 + 60);
+    }
+
+    // Efek pause
+    if (isPaused && !levelTransitioning) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 32px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('PAUSED', W / 2, H / 2);
+    }
+}
+
+function drawPipe(p) {
+    const cfg = getLevelConfig();
+    const capH = 20;
+
+    // Pipa atas
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, 0, p.w, p.topHeight - capH);
+    ctx.fillRect(p.x - 4, p.topHeight - capH, p.w + 8, capH);
+
+    // Pipa bawah
+    const bottomY = p.topHeight + p.gap;
+    ctx.fillRect(p.x - 4, bottomY, p.w + 8, capH);
+    ctx.fillRect(p.x, bottomY + capH, p.w, H - bottomY - capH - 20);
+
+    // Highlight 3D
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.fillRect(p.x + 4, 0, 6, p.topHeight - capH);
+    ctx.fillRect(p.x + 4, bottomY + capH, 6, H - bottomY - capH - 20);
+    ctx.fillRect(p.x, p.topHeight - capH, 6, capH);
+    ctx.fillRect(p.x, bottomY, 6, capH);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(p.x + p.w - 8, 0, 6, p.topHeight - capH);
+    ctx.fillRect(p.x + p.w - 8, bottomY + capH, 6, H - bottomY - capH - 20);
+}
+
+function drawBird() {
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    ctx.rotate(bird.rotation);
+
+    // Body
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outline
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Sayap
+    const wingY = Math.sin(bird.wingPhase) * 3;
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.ellipse(-3, wingY, 8, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Mata
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(5, -4, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Pupil
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(6, -4, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Paruh
+    ctx.fillStyle = '#ff6b35';
+    ctx.beginPath();
+    ctx.moveTo(12, 0);
+    ctx.lineTo(20, 2);
+    ctx.lineTo(12, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+// ============================================================
+// GAME OVER
+// ============================================================
+function gameOver(reason) {
+    isRunning = false;
+    clearInterval(gameLoop);
+    SFX.die();
+
+    // Update best score
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('flappy_best', bestScore);
+    }
+    updateBestUI();
+
+    // Efek partikel
+    spawnParticles(bird.x, bird.y, '#fbbf24', 20);
+    updateParticles();
+    draw();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML = `
+        <div class="level-badge">LEVEL ${currentLevel} · ${getLevelConfig().name.toUpperCase()}</div>
+        <h1 class="dead">💀 GAME OVER</h1>
+        <p>${reason || 'Coba lagi!'}</p>
+        <p>Skor kamu:</p>
+        <div class="final-score">${score}</div>
+        <p style="font-size: 12px; color: #94a3b8;">Terbaik: ${bestScore}</p>
+        <button id="restartBtn" type="button">🔄 Main Lagi</button>
+    `;
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+
+    saveScore(score);
+}
+
+// ============================================================
+// WIN GAME
+// ============================================================
+function winGame() {
+    isRunning = false;
+    clearInterval(gameLoop);
+    SFX.win();
+
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('flappy_best', bestScore);
+    }
+    updateBestUI();
+
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            spawnParticles(
+                Math.random() * W,
+                Math.random() * H,
+                ['#fbbf24', '#22c55e', '#22d3ee', '#f472b6'][i % 4],
+                20
+            );
+            updateParticles();
+            draw();
+        }, i * 150);
+    }
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML = `
+        <div class="level-badge">🏆 SEMUA LEVEL SELESAI</div>
+        <h1 class="win">🏆 YOU WIN!</h1>
+        <p>Kamu menaklukkan semua 10 level!</p>
+        <div class="final-score">${score}</div>
+        <p style="font-size: 12px; color: #94a3b8;">Terbaik: ${bestScore}</p>
+        <button id="restartBtn" type="button">🔄 Main Lagi</button>
+    `;
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+
+    saveScore(score);
+}
+
+// ============================================================
+// SAVE SCORE
+// ============================================================
+async function saveScore(finalScore) {
+    if (finalScore <= 0) return;
+    try {
+        const res = await fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: 'flappy-bird', score: finalScore })
+        });
+        const data = await res.json();
+        if (data.status === 'guest') {
+            showGuestScoreNotice(finalScore);
+        } else if (data.status === 'success') {
+            console.log('OK Skor tersimpan:', data);
+        }
+    } catch (e) {
+        console.warn('Gagal simpan skor:', e);
+    }
+}
+
+function showGuestScoreNotice(score) {
+    var existing = document.getElementById('guest-score-notice');
+    if (existing) existing.remove();
+    var notice = document.createElement('div');
+    notice.id = 'guest-score-notice';
+    notice.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; padding:14px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:10000; box-shadow:0 8px 24px rgba(245,158,11,0.4); font-family:Segoe UI,sans-serif; max-width:90vw; text-align:center; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;';
+    notice.innerHTML = 'Login untuk simpan skor <strong>' + score + '</strong> ke leaderboard! <a href="/login" style="color:#fff; text-decoration:underline; font-weight:700;">Login</a>';
+    document.body.appendChild(notice);
+    setTimeout(function() {
+        notice.style.transition = 'opacity 0.5s, transform 0.5s';
+        notice.style.opacity = '0';
+        notice.style.transform = 'translateX(-50%) translateY(-10px)';
+        setTimeout(function() { notice.remove(); }, 500);
+    }, 6000);
+}
+
+// ============================================================
+// FLAP
+// ============================================================
+function flap() {
+    if (!isRunning || isPaused || levelTransitioning) return;
+    bird.vy = bird.jump;
+    bird.wingPhase = 0;
+    SFX.flap();
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        if (!isRunning) {
+            initGame();
+        } else if (isPaused && !levelTransitioning) {
+            isPaused = false;
+            draw();
+        } else {
+            flap();
+        }
+    }
+    if (e.key === 'p' || e.key === 'P') {
+        if (isRunning) {
+            isPaused = !isPaused;
+            draw();
+        }
+    }
+});
+
+canvas.addEventListener('click', () => {
+    if (!isRunning) initGame();
+    else if (isPaused && !levelTransitioning) { isPaused = false; draw(); }
+    else flap();
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (!isRunning) initGame();
+    else if (isPaused && !levelTransitioning) { isPaused = false; draw(); }
+    else flap();
+}, { passive: false });
+
+// ============================================================
+// START
+// ============================================================
+startBtn.addEventListener('click', initGame);
+
+// ============================================================
+// BOOT
+// ============================================================
+createClouds();
+fitCanvas();
+updateBestUI();
+draw();
+</script>
+
+</body>
+</html>

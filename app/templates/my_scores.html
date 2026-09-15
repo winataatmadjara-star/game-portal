@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}Skor Saya - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== HEADER ===== */
+    .scores-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    .scores-header h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+    .scores-header p {
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.25s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        border-color: #c7d2fe;
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.1);
+    }
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .stat-icon.blue   { background: #dbeafe; }
+    .stat-icon.purple { background: #eef2ff; }
+    .stat-icon.green  { background: #d1fae5; }
+    .stat-icon.yellow { background: #fef3c7; }
+    .stat-icon.pink   { background: #fce7f3; }
+
+    .stat-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .stat-label {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+
+    /* ===== SECTION ===== */
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 16px;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ===== KATEGORI CARDS ===== */
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+    .category-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .category-card:hover {
+        border-color: #c7d2fe;
+        box-shadow: 0 4px 12px rgba(79,70,229,0.08);
+        transform: translateY(-2px);
+    }
+    .category-card .cat-name {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #4f46e5;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .category-card .cat-total {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+    .category-card .cat-detail {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 4px;
+    }
+    .category-card .cat-detail strong {
+        color: #475569;
+    }
+
+    /* ===== TABEL SKOR ===== */
+    .scores-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .scores-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .scores-table thead {
+        background: #f8fafc;
+    }
+    .scores-table th {
+        text-align: left;
+        padding: 14px 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .scores-table td {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        color: #334155;
+        vertical-align: middle;
+    }
+    .scores-table tr:last-child td { border-bottom: none; }
+    .scores-table tr:hover td { background: #f8fafc; }
+
+    .rank-cell {
+        font-weight: 800;
+        color: #94a3b8;
+        font-family: 'Courier New', monospace;
+        width: 50px;
+    }
+
+    .game-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+    }
+    .game-cell .emoji {
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .game-cell a {
+        color: #0f172a;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .game-cell a:hover { color: #4f46e5; }
+
+    .category-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        background: #eef2ff;
+        color: #4f46e5;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .score-cell {
+        font-family: 'Courier New', monospace;
+        font-weight: 800;
+        color: #4f46e5;
+        font-size: 1rem;
+    }
+
+    .date-cell {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-scores {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+    .empty-scores .big-emoji {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 12px;
+        opacity: 0.6;
+    }
+    .empty-scores h3 {
+        font-size: 1.2rem;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+    .empty-scores p {
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+    }
+    .btn-play-now {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff !important;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .btn-play-now:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 700px) {
+        .stat-value { font-size: 1.3rem; }
+        .stat-icon { width: 44px; height: 44px; font-size: 1.3rem; }
+        .scores-table th,
+        .scores-table td { padding: 10px 12px; font-size: 0.85rem; }
+        .scores-table .hide-mobile { display: none; }
+        .section-title { font-size: 1.1rem; }
+        .scores-header h1 { font-size: 1.5rem; }
+    }
+</style>
+
+<!-- ===== HEADER ===== -->
+<div class="scores-header">
+    <h1>🏆 Skor Saya</h1>
+    <p>Riwayat lengkap skor yang kamu raih di semua game</p>
+</div>
+
+<!-- ===== STAT CARDS ===== -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">🏅</div>
+        <div class="stat-body">
+            <span class="stat-label">Total Skor</span>
+            <span class="stat-value">{{ total_score or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon purple">🎮</div>
+        <div class="stat-body">
+            <span class="stat-label">Total Main</span>
+            <span class="stat-value">{{ total_plays or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green">🥇</div>
+        <div class="stat-body">
+            <span class="stat-label">Skor Tertinggi</span>
+            <span class="stat-value">{{ high_score or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon yellow">🎯</div>
+        <div class="stat-body">
+            <span class="stat-label">Game Unik</span>
+            <span class="stat-value">{{ unique_games or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon pink">📊</div>
+        <div class="stat-body">
+            <span class="stat-label">Rata-rata Skor</span>
+            <span class="stat-value">{{ avg_score or 0 }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SKOR PER KATEGORI ===== -->
+{% if category_stats %}
+<div class="section-title">📂 Skor per Kategori</div>
+<div class="category-grid">
+    {% for cat in category_stats %}
+    <div class="category-card">
+        <span class="cat-name">{{ cat.category }}</span>
+        <span class="cat-total">{{ cat.total or 0 }}</span>
+        <div class="cat-detail">
+            <span>{{ cat.plays }}× main</span>
+            <span>Best: <strong>{{ cat.best or 0 }}</strong></span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ===== RIWAYAT SKOR ===== -->
+<div class="section-title">📊 Riwayat Skor</div>
+
+<div class="scores-card">
+    {% if scores %}
+    <table class="scores-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;">#</th>
+                <th>Game</th>
+                <th class="hide-mobile">Kategori</th>
+                <th>Skor</th>
+                <th class="hide-mobile">Tanggal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set emoji_map = {
+                'snake': '🐍', 'breakout': '🧱', 'tetris': '🎮', 'flappy-bird': '🐦',
+                '2048': '🔢', 'pacman': '👻', 'minesweeper': '💣', 'memory-card': '🃏',
+                'space-shooter': '🚀', 'ninja-runner': '🥷', 'geo-explorer': '🌍'
+            } %}
+            {% for row in scores %}
+                {% set s = row[0] %}
+                {% set game_title = row[1] %}
+                {% set game_slug = row[2] %}
+                {% set game_category = row[3] %}
+                <tr>
+                    <td class="rank-cell">{{ loop.index }}</td>
+                    <td>
+                        <div class="game-cell">
+                            <span class="emoji">{{ emoji_map.get(game_slug, '🎮') }}</span>
+                            <a href="/game/{{ game_slug }}">{{ game_title }}</a>
+                        </div>
+                    </td>
+                    <td class="hide-mobile">
+                        <span class="category-badge">{{ game_category }}</span>
+                    </td>
+                    <td class="score-cell">{{ s.score }}</td>
+                    <td class="date-cell hide-mobile">
+                        {{ s.created_at.strftime('%d %b %Y, %H:%M') if s.created_at else '-' }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-scores">
+        <span class="big-emoji">🎮</span>
+        <h3>Belum Ada Skor</h3>
+        <p>Kamu belum memainkan game apapun. Yuk mulai main dan raih skor tertinggi!</p>
+        <a href="/" class="btn-play-now">▶ Mainkan Sekarang</a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

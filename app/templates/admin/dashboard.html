@@ -1,0 +1,395 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}Dashboard - Admin Panel{% endblock %}
+{% block page_title %}📊 Dashboard Overview{% endblock %}
+
+{% block content %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 22px;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(79,70,229,0.1);
+        border-color: #c7d2fe;
+    }
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 4px; height: 100%;
+        background: linear-gradient(180deg, #4f46e5, #7c3aed);
+    }
+    .stat-card h3 {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stat-card .value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -1px;
+        line-height: 1;
+    }
+    .stat-card .sub {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 6px;
+        font-weight: 500;
+    }
+
+    .chart-section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 28px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .chart-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .chart-tabs { display: flex; gap: 6px; }
+    .chart-tabs a {
+        padding: 6px 14px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .chart-tabs a.active {
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+    }
+    .chart-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        height: 200px;
+        padding: 10px 0;
+    }
+    .chart-bar-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        height: 100%;
+        justify-content: flex-end;
+    }
+    .chart-bar {
+        width: 100%;
+        background: linear-gradient(180deg, #4f46e5, #7c3aed);
+        border-radius: 6px 6px 0 0;
+        min-height: 4px;
+        transition: all 0.3s;
+    }
+    .chart-bar-value {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #4f46e5;
+    }
+    .chart-label {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+
+    .section-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    @media(max-width: 1000px) {
+        .section-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .card h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .card-header a {
+        font-size: 0.8rem;
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .card-header a:hover { text-decoration: underline; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.88rem;
+    }
+    th, td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    th {
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    td { color: #334155; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+
+    .badge-view {
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #475569;
+    }
+    .badge-role {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .badge-role.Admin { background: #fee2e2; color: #b91c1c; }
+    .badge-role.member { background: #e0e7ff; color: #4338ca; }
+    .badge-role.Free { background: #f1f5f9; color: #475569; }
+
+    .empty-state {
+        text-align: center;
+        color: #94a3b8;
+        padding: 32px 0;
+        font-size: 0.88rem;
+    }
+</style>
+
+<!-- STAT CARDS -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>🎮 Total Game</h3>
+        <div class="value">{{ total_games or 0 }}</div>
+        <div class="sub">{{ active_games or 0 }} aktif · {{ (total_games or 0) - (active_games or 0) }} nonaktif</div>
+    </div>
+    <div class="stat-card">
+        <h3>👥 Total User</h3>
+        <div class="value">{{ total_users or 0 }}</div>
+        <div class="sub">{{ total_admins or 0 }} admin</div>
+    </div>
+    <div class="stat-card">
+        <h3>🏆 Total Skor</h3>
+        <div class="value">{{ total_scores or 0 }}</div>
+        <div class="sub">Rata-rata: {{ avg_score or 0 }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>👁 Total Views</h3>
+        <div class="value">{{ total_views or 0 }}</div>
+        <div class="sub">Semua game</div>
+    </div>
+    <div class="stat-card">
+        <h3>🔐 Login Hari Ini</h3>
+        <div class="value">{{ today_logins or 0 }}</div>
+        <div class="sub">{{ today_failed or 0 }} gagal</div>
+    </div>
+</div>
+
+<!-- CHART -->
+<div class="chart-section">
+    <div class="chart-header">
+        <h2>📈 Aktivitas 7 Hari Terakhir</h2>
+        <div class="chart-tabs">
+            <a href="/admin/dashboard?chart=scores" class="{% if chart_mode != 'logins' %}active{% endif %}">Skor</a>
+            <a href="/admin/dashboard?chart=logins" class="{% if chart_mode == 'logins' %}active{% endif %}">Login</a>
+        </div>
+    </div>
+    <div class="chart-bars">
+        {% if chart_data %}
+            {% for day in chart_data %}
+            <div class="chart-bar-wrapper">
+                <span class="chart-bar-value">{{ day.count }}</span>
+                <div class="chart-bar" style="height: {{ day.height }}%;" title="{{ day.date }}: {{ day.count }}"></div>
+                <span class="chart-label">{{ day.label }}</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="width:100%; text-align:center; color:#94a3b8; padding:40px;">Belum ada data</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- RECENT -->
+<div class="section-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2>🎮 Game Terbaru</h2>
+            <a href="/admin/games">Lihat Semua →</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Judul</th>
+                    <th>Kategori</th>
+                    <th style="text-align:right;">Views</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_games %}
+                    {% for g in recent_games %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ g.title }}</td>
+                        <td style="color:#64748b; font-size:0.82rem;">{{ g.category }}</td>
+                        <td style="text-align: right;"><span class="badge-view">👁 {{ g.views }}</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="3" class="empty-state">Belum ada game</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>👥 Member Terbaru</h2>
+            <a href="/admin/users">Lihat Semua →</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th style="text-align:right;">Bergabung</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_users %}
+                    {% for u in recent_users %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ u.username }}</td>
+                        <td><span class="badge-role {{ u.role }}">{{ u.role }}</span></td>
+                        <td style="text-align: right; color:#94a3b8; font-size:0.82rem;">
+                            {{ u.created_at.strftime('%d %b') if u.created_at else '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="3" class="empty-state">Belum ada user</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>🏆 Skor Terbaru</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Game</th>
+                    <th style="text-align:right;">Skor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_scores %}
+                    {% for row in recent_scores %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ row.username or 'Guest' }}</td>
+                        <td style="color:#64748b; font-size:0.82rem;">{{ row.game_title }}</td>
+                        <td style="text-align: right;"><strong style="color:#4f46e5;">{{ row.score }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="3" class="empty-state">Belum ada skor</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>🔐 Login Terbaru</h2>
+            <a href="/admin/logins">Lihat Log →</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>IP</th>
+                    <th style="text-align:right;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_logins %}
+                    {% for log in recent_logins %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ log.username }}</td>
+                        <td style="color:#64748b; font-size:0.78rem; font-family:'Courier New',monospace;">{{ log.ip_address }}</td>
+                        <td style="text-align: right;">
+                            {% if log.success %}
+                                <span style="color:#15803d; font-weight:700; font-size:0.8rem;">✅ OK</span>
+                            {% else %}
+                                <span style="color:#b91c1c; font-weight:700; font-size:0.8rem;">❌ Gagal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="3" class="empty-state">Belum ada log</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% block title %}Profil Saya - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== HEADER PROFIL ===== */
+    .profile-header {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        border-radius: 20px;
+        padding: 32px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 28px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
+    }
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 40%),
+            radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1), transparent 50%);
+        pointer-events: none;
+    }
+    .profile-header-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: 4px solid rgba(255, 255, 255, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: 800;
+        color: #fff;
+        flex-shrink: 0;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .profile-info {
+        flex: 1;
+        min-width: 200px;
+    }
+    .profile-name {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+    }
+    .profile-email {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin-bottom: 12px;
+    }
+    .profile-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .profile-badge {
+        padding: 4px 14px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        border-color: #c7d2fe;
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.1);
+    }
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .stat-icon.purple { background: #eef2ff; }
+    .stat-icon.green  { background: #d1fae5; }
+    .stat-icon.yellow { background: #fef3c7; }
+    .stat-icon.pink   { background: #fce7f3; }
+
+    .stat-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .stat-label {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+
+    /* ===== TABEL SKOR ===== */
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .scores-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .scores-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .scores-table thead {
+        background: #f8fafc;
+    }
+    .scores-table th {
+        text-align: left;
+        padding: 14px 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .scores-table td {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        color: #334155;
+    }
+    .scores-table tr:last-child td { border-bottom: none; }
+    .scores-table tr:hover td { background: #f8fafc; }
+
+    .game-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #0f172a;
+    }
+    .game-cell .emoji {
+        font-size: 1.4rem;
+    }
+    .game-cell a {
+        color: #0f172a;
+        text-decoration: none;
+    }
+    .game-cell a:hover { color: #4f46e5; }
+
+    .score-cell {
+        font-family: 'Courier New', monospace;
+        font-weight: 800;
+        color: #4f46e5;
+        font-size: 1rem;
+    }
+    .date-cell {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
+    .empty-scores {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+    .empty-scores .big-emoji {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 12px;
+        opacity: 0.6;
+    }
+    .empty-scores h3 {
+        font-size: 1.2rem;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+    .empty-scores p {
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+    }
+    .btn-play-now {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff !important;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .btn-play-now:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+        .profile-header { padding: 24px 20px; flex-direction: column; text-align: center; }
+        .profile-header-content { flex-direction: column; text-align: center; }
+        .profile-avatar { width: 80px; height: 80px; font-size: 2.4rem; }
+        .profile-name { font-size: 1.5rem; }
+        .profile-badges { justify-content: center; }
+        .stat-value { font-size: 1.3rem; }
+        .stat-icon { width: 44px; height: 44px; font-size: 1.3rem; }
+        .scores-table th, .scores-table td { padding: 10px 12px; font-size: 0.85rem; }
+        .section-title { font-size: 1.1rem; }
+    }
+</style>
+
+<!-- ===== HEADER PROFIL ===== -->
+<div class="profile-header">
+    <div class="profile-header-content">
+        <div class="profile-avatar">{{ user[0]|upper }}</div>
+        <div class="profile-info">
+            <div class="profile-name">{{ user }}</div>
+            {% if profile and profile.email %}
+                <div class="profile-email">📧 {{ profile.email }}</div>
+            {% endif %}
+            <div class="profile-badges">
+                {% if is_admin %}
+                    <span class="profile-badge">🛡️ Administrator</span>
+                {% elif profile and profile.role %}
+                    <span class="profile-badge">🎮 {{ profile.role }}</span>
+                {% else %}
+                    <span class="profile-badge">🎮 Member</span>
+                {% endif %}
+                {% if profile and profile.phone and profile.phone != '-' %}
+                    <span class="profile-badge">📱 {{ profile.phone }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== STAT CARDS ===== -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon purple">🎮</div>
+        <div class="stat-body">
+            <span class="stat-label">Total Main</span>
+            <span class="stat-value">{{ total_plays or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green">🏆</div>
+        <div class="stat-body">
+            <span class="stat-label">Skor Tertinggi</span>
+            <span class="stat-value">{{ high_score or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon yellow">🎯</div>
+        <div class="stat-body">
+            <span class="stat-label">Game Dimainkan</span>
+            <span class="stat-value">{{ unique_games or 0 }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon pink">📅</div>
+        <div class="stat-body">
+            <span class="stat-label">Bergabung</span>
+            <span class="stat-value" style="font-size: 1rem;">
+                {{ profile.created_at.strftime('%d %b %Y') if profile and profile.created_at else '-' }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== RIWAYAT SKOR ===== -->
+<div class="section-title">📊 Riwayat Skor Terbaru</div>
+
+<div class="scores-card">
+    {% if scores %}
+    <table class="scores-table">
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>Skor</th>
+                <th>Tanggal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set emoji_map = {
+                'snake': '🐍', 'breakout': '🧱', 'tetris': '🎮', 'flappy-bird': '🐦',
+                '2048': '🔢', 'pacman': '👻', 'minesweeper': '💣', 'memory-card': '🃏',
+                'space-shooter': '🚀', 'ninja-runner': '🥷'
+            } %}
+            {% for row in scores %}
+                {% set s = row[0] %}
+                {% set game_title = row[1] %}
+                {% set game_slug = row[2] %}
+                <tr>
+                    <td>
+                        <div class="game-cell">
+                            <span class="emoji">{{ emoji_map.get(game_slug, '🎮') }}</span>
+                            <a href="/game/{{ game_slug }}">{{ game_title }}</a>
+                        </div>
+                    </td>
+                    <td class="score-cell">{{ s.score }}</td>
+                    <td class="date-cell">{{ s.created_at.strftime('%d %b %Y, %H:%M') if s.created_at else '-' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-scores">
+        <span class="big-emoji">🎮</span>
+        <h3>Belum Ada Skor</h3>
+        <p>Kamu belum memainkan game apapun. Yuk mulai main!</p>
+        <a href="/" class="btn-play-now">▶ Mainkan Sekarang</a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

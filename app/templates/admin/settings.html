@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setting Web - GamePortal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border-color: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --terminal-bg: #090d16;
+            --terminal-text: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Putih Elegan */
+        aside {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-links a.active, .nav-links a:hover {
+            background-color: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fecaca;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: auto;
+        }
+
+        .logout-btn:hover {
+            background-color: #fca5a5;
+            color: #991b1b;
+        }
+
+        /* Main Content Area */
+        main {
+            flex-grow: 1;
+            padding: 40px;
+            overflow-y: auto;
+            max-width: calc(100vw - 280px);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #1e293b;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .admin-badge {
+            background: #e0e7ff;
+            color: var(--primary);
+            border: 1px solid #c7d2fe;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Tab Navigation */
+        .settings-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        /* Form Card */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            max-width: 900px;
+            display: none;
+        }
+
+        .card.active-panel {
+            display: block;
+        }
+
+        .card h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: #1e293b;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-help {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-migration {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-migration:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-migration:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-push {
+            background-color: #16a34a;
+        }
+        .btn-push:hover {
+            background-color: #15803d;
+        }
+
+        .alert-info {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        /* Terminal Log Box & Setup Box */
+        .terminal-box {
+            background-color: var(--terminal-bg);
+            color: var(--terminal-text);
+            font-family: 'Courier New', Courier, monospace;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            min-height: 140px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid #1e293b;
+            white-space: pre-wrap;
+            position: relative;
+        }
+
+        .setup-command-box {
+            background-color: var(--terminal-bg);
+            color: #f8fafc;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            border: 1px solid #334155;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .setup-command-box code {
+            color: #4ade80;
+            word-break: break-all;
+        }
+
+        .btn-copy {
+            background-color: #334155;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-copy:hover {
+            background-color: #475569;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside>
+        <div class="brand">
+            ⚡ GamePortal Core
+        </div>
+        
+        <div class="nav-section-title">Menu Utama</div>
+        <ul class="nav-links">
+            <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+            <li><a href="/admin/users">👥 User Management</a></li>
+            <li><a href="/admin/pricing">🏷️ Paket Harga</a></li>
+            <li><a href="/admin/settings" class="active">⚙️ Setting Web</a></li>
+        </ul>
+
+        <div class="nav-section-title" style="margin-top: 24px;">Sistem</div>
+        <ul class="nav-links">
+            <li><a href="/" target="_blank">🌐 Lihat Website</a></li>
+        </ul>
+
+        <a href="/logout" class="logout-btn">Keluar Sesi</a>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+        <header>
+            <div>
+                <h1>Pengaturan Website</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Kelola identitas platform, konfigurasi SEO, sistem keamanan, integrasi, dan sinkronisasi GitHub.</p>
+            </div>
+            <div class="header-right">
+                <div class="admin-badge">🛡️ Admin Super</div>
+            </div>
+        </header>
+
+        <!-- Tab Navigasi Pengaturan -->
+        <div class="settings-tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'general')">🌐 Umum & Identitas</button>
+            <button class="tab-btn" onclick="switchTab(event, 'seo')">🔍 SEO & Metadata</button>
+            <button class="tab-btn" onclick="switchTab(event, 'security')">🔒 Keamanan & Sistem</button>
+            <button class="tab-btn" onclick="switchTab(event, 'api')">🔌 Integrasi & Kontak</button>
+            <button class="tab-btn" onclick="switchTab(event, 'github')" style="color: #2563eb;">🐙 Integrasi GitHub</button>
+        </div>
+
+        <!-- Panel 1: Umum & Identitas -->
+        <div id="general" class="card active-panel">
+            <h2>Konfigurasi Identitas Situs</h2>
+            <form onsubmit="event.preventDefault(); alert('Pengaturan Umum berhasil disimpan!');">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="siteName">Nama Situs Web</label>
+                        <input type="text" id="siteName" value="GamePortal Indonesia" required />
+                        <div class="form-help">Nama utama platform pada judul halaman dan header.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brandTagline">Tagline / Slogan</label>
+                        <input type="text" id="brandTagline" value="The Ultimate Gaming & E-Sports Community Hub" />
+                        <div class="form-help">Slogan singkat yang mendampingi logo platform.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminEmail">Email Kontak Resmi</label>
+                        <input type="email" id="adminEmail" value="support@gameportal.com" required />
+                        <div class="form-help">Alamat email tujuan notifikasi dan dukungan pelanggan.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timezone">Zona Waktu Platform</label>
+                        <select id="timezone">
+                            <option value="WIB" selected>WIB (UTC+7) - Waktu Indonesia Barat</option>
+                            <option value="WITA">WITA (UTC+8) - Waktu Indonesia Tengah</option>
+                            <option value="WIT">WIT (UTC+9) - Waktu Indonesia Timur</option>
+                        </select>
+                        <div class="form-help">Menentukan acuan waktu log aktivitas dan sesi login.</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Simpan Perubahan</button>
+            </form>
+        </div>
+
+        <!-- Panel 2: SEO & Metadata -->
+        <div id="seo" class="card">
+            <h2>Optimasi Mesin Pencari (SEO)</h2>
+            <form onsubmit="event.preventDefault(); alert('Pengaturan SEO berhasil disimpan!');">
+                <div class="form-group full-width">
+                    <label for="siteDesc">Deskripsi Meta (Meta Description)</label>
+                    <textarea id="siteDesc">Portal game online terlengkap yang menyediakan direktori game seru, ulasan, keanggotaan Pro Gamer, dan komunitas gamer terbaik di Indonesia.</textarea>
+                    <div class="form-help">Ringkasan isi situs yang optimal dibatasi maksimal 160 karakter untuk hasil pencarian Google.</div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="metaKeywords">Kata Kunci Utama (Meta Keywords)</label>
+                    <input type="text" id="metaKeywords" value="game online, e-sports indonesia, gameportal, turnamen game, komunitas gamer" />
+                    <div class="form-help">Pisahkan dengan tanda koma (,) untuk membantu pengindeksan crawler mesin pencari.</div>
+                </div>
+
+                <button type="submit" class="btn-submit">Simpan Pengaturan SEO</button>
+            </form>
+        </div>
+
+        <!-- Panel 3: Keamanan & Sistem -->
+        <div id="security" class="card">
+            <h2>Kontrol Sistem & Keamanan Server</h2>
+            <div class="alert-info">
+                ℹ️ Mengaktifkan <strong>Maintenance Mode</strong> akan mengalihkan seluruh pengunjung publik ke halaman pemberitahuan sementara, kecuali akun ber-role Admin.
+            </div>
+            <form onsubmit="event.preventDefault(); alert('Pengaturan Keamanan berhasil disimpan!');">
+                <div class="form-group">
+                    <label for="maintenanceMode">Status Operasional Server</label>
+                    <select id="maintenanceMode">
+                        <option value="off" selected>Normal (Website Dapat Diakses Publik)</option>
+                        <option value="on">Maintenance Mode (Ditutup Sementara untuk Pemeliharaan)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="registrationStatus">Pendaftaran Anggota Baru</label>
+                    <select id="registrationStatus">
+                        <option value="open" selected>Dibuka (Siapa saja dapat mendaftar)</option>
+                        <option value="closed">Ditutup (Pendaftaran akun baru dinonaktifkan)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Kebijakan Proteksi Platform</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="antiGamblingPolicy" checked />
+                        <label for="antiGamblingPolicy" style="font-weight: 500; margin-bottom: 0;">Aktifkan Filter Ketat & Blokir Otomatis Indikasi Judi Online</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Simpan Pengaturan Sistem</button>
+            </form>
+        </div>
+
+        <!-- Panel 4: Integrasi & Kontak -->
+        <div id="api" class="card">
+            <h2>Integrasi Layanan Pihak Ketiga & Sosial Media</h2>
+            <form onsubmit="event.preventDefault(); alert('Integrasi berhasil diperbarui!');">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="discordUrl">Tautan Server Discord</label>
+                        <input type="text" id="discordUrl" value="https://discord.gg/gameportal" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instagramUrl">Akun Instagram Resmi</label>
+                        <input type="text" id="instagramUrl" value="https://instagram.com/gameportal.id" />
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="analyticsId">Google Analytics Tracking ID / Measurement ID</label>
+                        <input type="text" id="analyticsId" value="G-XXXXXXXXXX" />
+                        <div class="form-help">Kode pelacakan untuk memantau trafik pengunjung situs web secara real-time.</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Simpan Integrasi</button>
+            </form>
+        </div>
+
+        <!-- Panel 5: Integrasi GitHub (Pull & Push + Setup Git Lokal) -->
+        <div id="github" class="card">
+            <h2>Manajemen Sinkronisasi GitHub & Setup Lokal</h2>
+            <div class="alert-info" style="background-color: #eff6ff; border-color: #bfdbfe; color: #1e40af;">
+                🐙 Kelola sinkronisasi kode secara dua arah (Pull & Push) langsung dari panel web serta panduan inisialisasi Git di komputer lokal Anda.
+            </div>
+
+            <!-- Form Pengaturan URL -->
+            <form onsubmit="event.preventDefault(); alert('URL Repositori berhasil disimpan!');">
+                <div class="form-group full-width" style="margin-top: 10px;">
+                    <label for="repoUrlInput">URL Repositori GitHub & Branch</label>
+                    <input type="text" id="repoUrlInput" value="https://github.com/username/game_portal.git" oninput="updateLocalSetupCommands()" required />
+                    <div class="form-help">Masukkan URL remote git (Contoh: https://github.com/username/repo.git)</div>
+                </div>
+                <button type="submit" class="btn-submit" style="margin-bottom: 24px;">Simpan URL Repositori</button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0 24px 0;">
+
+            <!-- KOLOM SETUP GIT DI LOKAL -->
+            <div class="form-group full-width" style="background: #f8fafc; border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; margin-bottom: 24px;">
+                <label style="font-size: 1rem; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    💻 Panduan Setup Git di Komputer Lokal (Terminal / CLI)
+                </label>
+                <div class="form-help" style="margin-bottom: 16px;">Jika Anda baru pertama kali menghubungkan folder proyek lokal ke repository GitHub di atas, jalankan perintah terminal berikut secara berurutan:</div>
+
+                <!-- Langkah 1 -->
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">1. Masuk ke folder proyek lokal Anda & Inisialisasi Git:</div>
+                <div class="setup-command-box">
+                    <code id="cmdInit">cd /path/ke/folder/proyek && git init</code>
+                    <button class="btn-copy" onclick="copyCommand('cmdInit', this)">Salin</button>
+                </div>
+
+                <!-- Langkah 2 -->
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; margin-top: 12px;">2. Hubungkan folder lokal ke Remote Repository GitHub:</div>
+                <div class="setup-command-box">
+                    <code id="cmdRemote">git remote add origin https://github.com/username/game_portal.git</code>
+                    <button class="btn-copy" onclick="copyCommand('cmdRemote', this)">Salin</button>
+                </div>
+
+                <!-- Langkah 3 -->
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; margin-top: 12px;">3. Buat commit awal & Push ke branch utama (main):</div>
+                <div class="setup-command-box">
+                    <code id="cmdPush">git add . && git commit -m "feat: initial commit gameportal" && git branch -M main && git push -u origin main</code>
+                    <button class="btn-copy" onclick="copyCommand('cmdPush', this)">Salin</button>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+            <!-- Opsi Git Pull -->
+            <div class="form-group full-width">
+                <label style="margin-bottom: 8px;">Tarik Pembaruan dari Remote (Git Pull):</label>
+                <button type="button" id="gitPullBtn" class="btn-migration" onclick="runGithubPull()">
+                    🔄 Pull & Update dari GitHub Sekarang
+                </button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+            <!-- Opsi Git Push -->
+            <div class="form-group full-width">
+                <label for="commitMessageInput" style="margin-bottom: 8px;">Kirim Perubahan Lokal ke GitHub (Git Push):</label>
+                <input type="text" id="commitMessageInput" placeholder="Pesan commit (Contoh: Update konfigurasi sistem admin)" value="chore: update settings via web panel" style="margin-bottom: 12px;" />
+                <button type="button" id="gitPushBtn" class="btn-migration btn-push" onclick="runGithubPush()">
+                    🚀 Commit & Push ke GitHub
+                </button>
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 24px;">
+                <label>Log Eksekusi Git (Pull / Push):</label>
+                <div id="githubTerminalLog" class="terminal-box">> Siap menjalankan perintah Git...</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Fungsi Tab Navigasi Pengaturan
+        function switchTab(evt, tabName) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => card.classList.remove('active-panel'));
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active-panel');
+            evt.currentTarget.classList.add('active');
+        }
+
+        // Sinkronisasi otomatis URL input ke baris perintah setup lokal
+        function updateLocalSetupCommands() {
+            const repoUrl = document.getElementById('repoUrlInput').value.trim();
+            const remoteCmdElem = document.getElementById('cmdRemote');
+            if (remoteCmdElem && repoUrl) {
+                remoteCmdElem.innerText = `git remote add origin ${repoUrl}`;
+            }
+        }
+
+        // Fungsi Salin Perintah Terminal ke Clipboard
+        function copyCommand(elementId, btnElem) {
+            const codeText = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const originalText = btnElem.innerText;
+                btnElem.innerText = "Berhasil Disalin!";
+                btnElem.style.backgroundColor = "#16a34a";
+                setTimeout(() => {
+                    btnElem.innerText = originalText;
+                    btnElem.style.backgroundColor = "#334155";
+                }, 2000);
+            }).catch(err => {
+                alert("Gagal menyalin teks.");
+            });
+        }
+
+        // Fungsi Nyata Eksekusi Git Pull via AJAX
+        async function runGithubPull() {
+            const btn = document.getElementById('gitPullBtn');
+            const terminal = document.getElementById('githubTerminalLog');
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Sedang Menarik Pembaruan (Git Pull)...";
+            terminal.innerText = "> Menjalankan git pull origin main...\n";
+
+            try {
+                const response = await fetch('/admin/git-pull', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    terminal.innerText += result.output + "\n\n✔ Sukses melakukan git pull!";
+                    alert("Repository berhasil diperbarui!");
+                    location.reload(); 
+                } else {
+                    terminal.innerText += `❌ Error:\n${result.output}`;
+                    alert("Gagal melakukan git pull.");
+                }
+            } catch (err) {
+                terminal.innerText += `❌ Fatal Error: ${err.message}`;
+                alert("Terjadi kesalahan jaringan.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🔄 Pull & Update dari GitHub Sekarang";
+            }
+        }
+
+        // Fungsi Nyata Eksekusi Git Push via AJAX
+        async function runGithubPush() {
+            const btn = document.getElementById('gitPushBtn');
+            const terminal = document.getElementById('githubTerminalLog');
+            const commitMsg = document.getElementById('commitMessageInput').value;
+
+            if (!commitMsg.trim()) {
+                alert("Pesan commit tidak boleh kosong!");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Sedang Melakukan Git Commit & Push...";
+            terminal.innerText = `> Menjalankan git add, commit, dan push...\n`;
+
+            try {
+                const response = await fetch('/admin/git-push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ commit_message: commitMsg })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    terminal.innerText += result.output + "\n\n✔ Sukses push ke GitHub!";
+                    alert("Perubahan berhasil dikirim ke repository GitHub!");
+                } else {
+                    terminal.innerText += `❌ Error:\n${result.output}`;
+                    alert("Gagal melakukan git push.");
+                }
+            } catch (err) {
+                terminal.innerText += `❌ Fatal Error: ${err.message}`;
+                alert("Terjadi kesalahan jaringan.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🚀 Commit & Push ke GitHub";
+            }
+        }
+    </script>
+
+</body>
+</html>

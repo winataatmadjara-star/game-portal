@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}Daftar - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .auth-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 260px);
+        padding: 20px;
+    }
+
+    .auth-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 40px 36px;
+        max-width: 440px;
+        width: 100%;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .auth-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #06b6d4, #4f46e5, #7c3aed);
+    }
+
+    .auth-header-icon {
+        font-size: 3rem;
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #ecfeff, #e0e7ff);
+        border-radius: 20px;
+        box-shadow: 0 8px 20px rgba(6, 182, 212, 0.15);
+    }
+
+    .auth-card h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+    }
+
+    .auth-subtitle {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 28px;
+        line-height: 1.5;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .alert-success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .form-group {
+        text-align: left;
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 13px 16px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: #0f172a;
+        background: #f8fafc;
+        outline: none;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+
+    .form-group input:focus {
+        border-color: #4f46e5;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    }
+
+    .form-group input::placeholder {
+        color: #94a3b8;
+    }
+
+    .form-hint {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 6px;
+        display: block;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #06b6d4, #4f46e5);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 0.3px;
+        margin-top: 8px;
+        transition: all 0.2s;
+        font-family: inherit;
+        box-shadow: 0 6px 16px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+    }
+
+    .auth-footer {
+        margin-top: 24px;
+        font-size: 0.88rem;
+        color: #64748b;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .auth-footer a {
+        color: #4f46e5;
+        font-weight: 700;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .auth-footer a:hover {
+        color: #7c3aed;
+        text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+        .auth-card { padding: 30px 24px; }
+        .auth-header-icon { width: 64px; height: 64px; font-size: 2.2rem; }
+        .auth-card h2 { font-size: 1.3rem; }
+    }
+</style>
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header-icon">✨</div>
+        <h2>Daftar Akun Baru</h2>
+        <p class="auth-subtitle">Gratis! Daftar sekarang dan mulai mainkan ratusan game seru.</p>
+
+        {% if error %}
+            <div class="alert-error">⚠️ {{ error }}</div>
+        {% endif %}
+
+        {% if success %}
+            <div class="alert-success">✅ {{ success }}</div>
+        {% endif %}
+
+        <form method="POST" action="/register">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Pilih username unik"
+                    required
+                    autocomplete="username"
+                    minlength="3"
+                    maxlength="50">
+                <span class="form-hint">Minimal 3 karakter, tanpa spasi</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="nama@email.com"
+                    required
+                    autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Nomor HP / WhatsApp</label>
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="Contoh: 08123456789"
+                    required
+                    autocomplete="tel"
+                    pattern="[0-9+\-\s]{8,20}">
+                <span class="form-hint">Untuk notifikasi dan pemulihan akun</span>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Minimal 6 karakter"
+                    required
+                    autocomplete="new-password"
+                    minlength="6">
+                <span class="form-hint">Gunakan kombinasi huruf dan angka</span>
+            </div>
+
+            <button type="submit" class="btn-submit">Daftar Sekarang</button>
+        </form>
+
+        <p class="auth-footer">Sudah punya akun? <a href="/login">Login di sini</a></p>
+    </div>
+</div>
+{% endblock %}

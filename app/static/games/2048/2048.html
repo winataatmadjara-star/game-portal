@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>2048 Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+html, body {
+    width: 100%; height: 100%; overflow: hidden; position: fixed;
+    background: #0a0e27; color: #fff; touch-action: none;
+}
+body { display: flex; justify-content: center; align-items: center; }
+
+.bg-aurora {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(251, 191, 36, 0.15), transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.15), transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.1), transparent 60%);
+    animation: auroraShift 14s ease-in-out infinite alternate;
+}
+@keyframes auroraShift {
+    0%   { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.15) rotate(-3deg); }
+}
+
+.game-container {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 10px; width: 100%; height: 100%;
+}
+
+.title {
+    font-size: 1.6rem; font-weight: 800;
+    background: linear-gradient(135deg, #fbbf24, #ef4444);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px; text-transform: uppercase;
+    filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5));
+}
+
+.hud {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 460px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.hud-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hud-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+.hud-value { font-size: 16px; font-weight: 700; }
+.hud .score  .hud-value { color: #fbbf24; }
+.hud .best   .hud-value { color: #4ade80; }
+.hud .level  .hud-value { color: #22d3ee; }
+.hud .target .hud-value { color: #f472b6; }
+
+.level-progress {
+    width: 100%; max-width: 460px; height: 6px;
+    background: rgba(15, 23, 42, 0.85);
+    border-radius: 3px; overflow: hidden;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+.level-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #22d3ee, #fbbf24);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+.canvas-wrapper {
+    position: relative; display: inline-block;
+    padding: 12px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 3px solid rgba(251, 191, 36, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 0 40px rgba(251, 191, 36, 0.2), inset 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+canvas {
+    display: block;
+    background: #1e293b;
+    border-radius: 10px;
+    touch-action: none;
+}
+
+.overlay {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 20px;
+    z-index: 10;
+    border-radius: 16px;
+    animation: popIn 0.3s ease;
+}
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.overlay.hidden { display: none; }
+
+.overlay h1 {
+    font-size: 1.8rem; margin-bottom: 12px;
+    background: linear-gradient(135deg, #fbbf24, #ef4444);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+}
+.overlay h1.dead {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.overlay h1.win {
+    background: linear-gradient(135deg, #fbbf24, #22c55e);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.overlay p {
+    margin-bottom: 6px; font-size: 13px;
+    color: #cbd5e1; line-height: 1.5;
+    max-width: 340px;
+}
+
+.overlay .final-score {
+    font-size: 2.2rem; font-weight: 800; color: #fbbf24;
+    margin: 12px 0; text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+}
+
+.overlay button {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #0f172a; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    margin-top: 10px; transition: all 0.2s;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+    position: relative;
+    z-index: 20;
+}
+.overlay button:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 25px rgba(251, 191, 36, 0.6);
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    background: rgba(34, 211, 238, 0.2);
+    border: 1px solid #22d3ee;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #22d3ee;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.level-toast {
+    position: fixed; top: 18%; left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #0f172a; padding: 14px 28px; border-radius: 14px;
+    font-size: 16px; font-weight: 800; letter-spacing: 1px;
+    z-index: 100; box-shadow: 0 10px 40px rgba(251, 191, 36, 0.6);
+    pointer-events: none; text-align: center;
+}
+.level-toast.show { animation: toastPop 2s ease forwards; }
+@keyframes toastPop {
+    0%   { transform: translateX(-50%) scale(0);   opacity: 0; }
+    15%  { transform: translateX(-50%) scale(1.1); opacity: 1; }
+    25%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+    85%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+}
+
+.controls-mobile {
+    display: none;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(2, 56px);
+    gap: 8px;
+    margin-top: 4px;
+}
+.controls-mobile button {
+    background: rgba(22, 33, 62, 0.9);
+    color: #fbbf24;
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    font-size: 22px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.controls-mobile button:active {
+    background: #fbbf24;
+    color: #0f172a;
+    transform: scale(0.92);
+}
+.controls-mobile .btn-up    { grid-column: 2; grid-row: 1; }
+.controls-mobile .btn-left  { grid-column: 1; grid-row: 2; }
+.controls-mobile .btn-down  { grid-column: 2; grid-row: 2; }
+.controls-mobile .btn-right { grid-column: 3; grid-row: 2; }
+
+@media (max-width: 600px) {
+    .title { font-size: 1.2rem; }
+    .hud { max-width: 96vw; font-size: 11px; padding: 8px 10px; }
+    .hud-value { font-size: 13px; }
+    .controls-mobile { display: grid; }
+    .overlay h1 { font-size: 1.4rem; }
+    .overlay .final-score { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-aurora"></div>
+
+<div class="game-container">
+    <div class="title">🎯 2048 Adventure</div>
+
+    <div class="hud">
+        <div class="hud-item score">
+            <span class="hud-label">Skor</span>
+            <span class="hud-value" id="score">0</span>
+        </div>
+        <div class="hud-item best">
+            <span class="hud-label">Terbaik</span>
+            <span class="hud-value" id="best">0</span>
+        </div>
+        <div class="hud-item level">
+            <span class="hud-label">Level</span>
+            <span class="hud-value" id="levelDisplay">1/10</span>
+        </div>
+        <div class="hud-item target">
+            <span class="hud-label">Target</span>
+            <span class="hud-value" id="targetDisplay">64</span>
+        </div>
+    </div>
+
+    <div class="level-progress">
+        <div class="level-progress-fill" id="levelProgress"></div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="440" height="440"></canvas>
+
+        <div id="overlay" class="overlay">
+            <div class="level-badge" id="levelBadge">LEVEL 1 · TARGET 64</div>
+            <h1>🎯 2048 Adventure</h1>
+            <p><strong>10 Level</strong> dengan target berbeda!</p>
+            <p>Geser dengan <strong>Arrow Keys</strong>, <strong>WASD</strong>, atau swipe</p>
+            <p>Gabungkan angka sama → capai target → naik level!</p>
+            <button id="startBtn" type="button">▶ Mulai Bermain</button>
+        </div>
+    </div>
+
+    <div class="controls-mobile">
+        <button type="button" class="btn-up"    data-dir="up">▲</button>
+        <button type="button" class="btn-left"  data-dir="left">◀</button>
+        <button type="button" class="btn-down"  data-dir="down">▼</button>
+        <button type="button" class="btn-right" data-dir="right">▶</button>
+    </div>
+</div>
+
+<div id="toast" class="level-toast"></div>
+
+<script>
+// ============================================================
+// 2048 ADVENTURE - 10 Level
+// ============================================================
+
+var canvas = document.getElementById('gameCanvas');
+var ctx = canvas.getContext('2d');
+var scoreEl = document.getElementById('score');
+var bestEl = document.getElementById('best');
+var levelDisplay = document.getElementById('levelDisplay');
+var targetDisplay = document.getElementById('targetDisplay');
+var levelProgress = document.getElementById('levelProgress');
+var overlay = document.getElementById('overlay');
+var levelBadge = document.getElementById('levelBadge');
+var startBtn = document.getElementById('startBtn');
+var toast = document.getElementById('toast');
+
+var SIZE = 4;
+var CELL_SIZE = 90;
+var PADDING = 10;
+var BOARD_SIZE = 440;
+var grid = [];
+var score = 0;
+var currentLevel = 1;
+var bestScore = 0;
+var isRunning = false;
+var isPaused = false;
+var animating = false;
+
+// ============================================================
+// KONFIGURASI 10 LEVEL
+// ============================================================
+var LEVELS = [
+    { target: 64,    spawnMax: 2, startTiles: 2 },
+    { target: 128,   spawnMax: 2, startTiles: 2 },
+    { target: 256,   spawnMax: 4, startTiles: 2 },
+    { target: 512,   spawnMax: 4, startTiles: 2 },
+    { target: 1024,  spawnMax: 4, startTiles: 2 },
+    { target: 2048,  spawnMax: 4, startTiles: 2 },
+    { target: 4096,  spawnMax: 4, startTiles: 2 },
+    { target: 8192,  spawnMax: 8, startTiles: 2 },
+    { target: 16384, spawnMax: 8, startTiles: 2 },
+    { target: 32768, spawnMax: 8, startTiles: 2 }
+];
+
+var TILE_COLORS = {
+    2:     { bg: '#eee4da', text: '#776e65' },
+    4:     { bg: '#ede0c8', text: '#776e65' },
+    8:     { bg: '#f2b179', text: '#f9f6f2' },
+    16:    { bg: '#f59563', text: '#f9f6f2' },
+    32:    { bg: '#f67c5f', text: '#f9f6f2' },
+    64:    { bg: '#f65e3b', text: '#f9f6f2' },
+    128:   { bg: '#edcf72', text: '#f9f6f2' },
+    256:   { bg: '#edcc61', text: '#f9f6f2' },
+    512:   { bg: '#edc850', text: '#f9f6f2' },
+    1024:  { bg: '#edc53f', text: '#f9f6f2' },
+    2048:  { bg: '#edc22e', text: '#f9f6f2' },
+    4096:  { bg: '#3c3a32', text: '#f9f6f2' },
+    8192:  { bg: '#2c3e50', text: '#f9f6f2' },
+    16384: { bg: '#8e44ad', text: '#f9f6f2' },
+    32768: { bg: '#e74c3c', text: '#f9f6f2' },
+    65536: { bg: '#22c55e', text: '#f9f6f2' }
+};
+
+// ============================================================
+// AUDIO
+// ============================================================
+var audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { audioCtx = null; }
+    }
+}
+
+function playSound(freq, duration, type, volume) {
+    type = type || 'sine';
+    volume = volume || 0.06;
+    if (!audioCtx) return;
+    try {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = volume;
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+}
+
+var SFX = {
+    move: function() { playSound(220, 0.03, 'sine', 0.03); },
+    merge: function() {
+        playSound(660, 0.08, 'square', 0.05);
+        setTimeout(function() { playSound(880, 0.1, 'square', 0.05); }, 50);
+    },
+    levelUp: function() {
+        [523, 659, 784, 1047].forEach(function(f, i) {
+            setTimeout(function() { playSound(f, 0.15); }, i * 100);
+        });
+    },
+    gameOver: function() {
+        playSound(220, 0.15, 'sawtooth', 0.1);
+        setTimeout(function() { playSound(165, 0.3, 'sawtooth', 0.1); }, 150);
+    },
+    win: function() {
+        [523, 659, 784, 1047, 1319].forEach(function(f, i) {
+            setTimeout(function() { playSound(f, 0.2); }, i * 130);
+        });
+    }
+};
+
+// ============================================================
+// FIT CANVAS
+// ============================================================
+function fitCanvas() {
+    var maxW = Math.min(window.innerWidth - 40, 460);
+    var maxH = Math.min(window.innerHeight - 240, 460);
+    var size = Math.max(200, Math.min(maxW, maxH));
+
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    canvas.width = size;
+    canvas.height = size;
+
+    BOARD_SIZE = size;
+    PADDING = size * 0.025;
+    CELL_SIZE = (size - PADDING * (SIZE + 1)) / SIZE;
+
+    draw();
+}
+
+window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', function() { setTimeout(fitCanvas, 200); });
+
+// ============================================================
+// HIGH SCORE
+// ============================================================
+function loadBest() {
+    bestScore = parseInt(localStorage.getItem('2048_best') || '0', 10);
+    bestEl.textContent = bestScore;
+}
+
+function saveBest() {
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('2048_best', bestScore);
+        bestEl.textContent = bestScore;
+    }
+}
+
+// ============================================================
+// LEVEL HELPERS
+// ============================================================
+function getLevelConfig() {
+    return LEVELS[Math.min(currentLevel - 1, LEVELS.length - 1)];
+}
+
+function updateLevelUI() {
+    levelDisplay.textContent = currentLevel + '/10';
+    targetDisplay.textContent = getLevelConfig().target;
+    levelBadge.textContent = 'LEVEL ' + currentLevel + ' · TARGET ' + getLevelConfig().target;
+    updateProgressBar();
+}
+
+function updateProgressBar() {
+    if (!grid || grid.length === 0) {
+        levelProgress.style.width = '0%';
+        return;
+    }
+    var target = getLevelConfig().target;
+    var maxTile = getMaxTile();
+    var pct = Math.min(100, (Math.log2(Math.max(2, maxTile)) / Math.log2(target)) * 100);
+    levelProgress.style.width = pct + '%';
+}
+
+function getMaxTile() {
+    if (!grid || grid.length === 0) return 0;
+    var max = 0;
+    for (var r = 0; r < SIZE; r++) {
+        if (!grid[r]) continue;
+        for (var c = 0; c < SIZE; c++) {
+            if (grid[r][c] > max) max = grid[r][c];
+        }
+    }
+    return max;
+}
+
+function showToast(text) {
+    toast.textContent = text;
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function initGame() {
+    initAudio();
+    currentLevel = 1;
+    score = 0;
+    animating = false;
+
+    scoreEl.textContent = '0';
+    loadBest();
+
+    newBoard();            // ← buat grid DULU
+    updateLevelUI();       // ← baru update UI (butuh grid)
+
+    overlay.classList.add('hidden');
+    isRunning = true;
+    isPaused = false;
+
+    draw();
+}
+
+function newBoard() {
+    grid = [];
+    for (var r = 0; r < SIZE; r++) {
+        grid.push([0, 0, 0, 0]);
+    }
+    var cfg = getLevelConfig();
+    for (var i = 0; i < cfg.startTiles; i++) {
+        addRandomTile();
+    }
+    score = 0;
+    scoreEl.textContent = '0';
+}
+
+function addRandomTile() {
+    var empty = [];
+    for (var r = 0; r < SIZE; r++) {
+        for (var c = 0; c < SIZE; c++) {
+            if (grid[r][c] === 0) empty.push({ r: r, c: c });
+        }
+    }
+    if (empty.length === 0) return;
+    var pick = empty[Math.floor(Math.random() * empty.length)];
+    var cfg = getLevelConfig();
+    grid[pick.r][pick.c] = Math.random() < 0.9 ? 2 : cfg.spawnMax;
+}
+
+function slide(row) {
+    var arr = row.filter(function(v) { return v !== 0; });
+    var gained = 0;
+    for (var i = 0; i < arr.length - 1; i++) {
+        if (arr[i] === arr[i + 1]) {
+            arr[i] *= 2;
+            gained += arr[i];
+            arr[i + 1] = 0;
+            i++;
+        }
+    }
+    var result = arr.filter(function(v) { return v !== 0; });
+    while (result.length < SIZE) result.push(0);
+    return { result: result, gained: gained };
+}
+
+function rotateGrid() {
+    var newGrid = [];
+    for (var r = 0; r < SIZE; r++) newGrid.push([0, 0, 0, 0]);
+    for (var r2 = 0; r2 < SIZE; r2++) {
+        for (var c = 0; c < SIZE; c++) {
+            newGrid[c][SIZE - 1 - r2] = grid[r2][c];
+        }
+    }
+    grid = newGrid;
+}
+
+function move(dir) {
+    if (animating || !isRunning || isPaused) return;
+
+    var before = JSON.stringify(grid);
+    var gained = 0;
+
+    var rotations = { left: 0, up: 1, right: 2, down: 3 };
+    for (var i = 0; i < rotations[dir]; i++) rotateGrid();
+
+    for (var r = 0; r < SIZE; r++) {
+        var res = slide(grid[r]);
+        grid[r] = res.result;
+        gained += res.gained;
+    }
+
+    for (var j = 0; j < (4 - rotations[dir]) % 4; j++) rotateGrid();
+
+    var after = JSON.stringify(grid);
+
+    if (before !== after) {
+        if (gained > 0) {
+            score += gained;
+            scoreEl.textContent = score;
+            SFX.merge();
+        } else {
+            SFX.move();
+        }
+        addRandomTile();
+        updateProgressBar();
+
+        var maxTile = getMaxTile();
+        if (maxTile >= getLevelConfig().target) {
+            nextLevel();
+            return;
+        }
+
+        if (isGameOver()) {
+            gameOver('Tidak ada langkah lagi!');
+            return;
+        }
+    }
+
+    draw();
+}
+
+function isGameOver() {
+    for (var r = 0; r < SIZE; r++) {
+        for (var c = 0; c < SIZE; c++) {
+            if (grid[r][c] === 0) return false;
+        }
+    }
+    for (var r2 = 0; r2 < SIZE; r2++) {
+        for (var c2 = 0; c2 < SIZE; c2++) {
+            var v = grid[r2][c2];
+            if (c2 < SIZE - 1 && grid[r2][c2 + 1] === v) return false;
+            if (r2 < SIZE - 1 && grid[r2 + 1][c2] === v) return false;
+        }
+    }
+    return true;
+}
+
+// ============================================================
+// NEXT LEVEL
+// ============================================================
+function nextLevel() {
+    if (currentLevel >= 10) {
+        winGame();
+        return;
+    }
+
+    animating = true;
+    isPaused = true;
+    SFX.levelUp();
+
+    var next = currentLevel + 1;
+    showToast('🎉 LEVEL ' + next + '!');
+
+    setTimeout(function() {
+        currentLevel = next;
+        newBoard();
+        updateLevelUI();
+        animating = false;
+        isPaused = false;
+        draw();
+    }, 2000);
+}
+
+// ============================================================
+// DRAW
+// ============================================================
+function draw() {
+    if (!grid || grid.length === 0) return;
+
+    ctx.fillStyle = '#1e293b';
+    roundRect(0, 0, BOARD_SIZE, BOARD_SIZE, 12);
+    ctx.fill();
+
+    for (var r = 0; r < SIZE; r++) {
+        for (var c = 0; c < SIZE; c++) {
+            var x = PADDING + c * (CELL_SIZE + PADDING);
+            var y = PADDING + r * (CELL_SIZE + PADDING);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+            roundRect(x, y, CELL_SIZE, CELL_SIZE, 8);
+            ctx.fill();
+        }
+    }
+
+    for (var r2 = 0; r2 < SIZE; r2++) {
+        for (var c2 = 0; c2 < SIZE; c2++) {
+            var v = grid[r2][c2];
+            if (v === 0) continue;
+            var x2 = PADDING + c2 * (CELL_SIZE + PADDING);
+            var y2 = PADDING + r2 * (CELL_SIZE + PADDING);
+            drawTile(x2, y2, CELL_SIZE, CELL_SIZE, v);
+        }
+    }
+
+    if (isPaused && !animating) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        roundRect(0, 0, BOARD_SIZE, BOARD_SIZE, 12);
+        ctx.fill();
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold ' + (BOARD_SIZE * 0.08) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('PAUSED', BOARD_SIZE / 2, BOARD_SIZE / 2);
+    }
+}
+
+function drawTile(x, y, w, h, value) {
+    var colors = TILE_COLORS[value] || { bg: '#3c3a32', text: '#f9f6f2' };
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    roundRect(x + 2, y + 3, w, h, 8);
+    ctx.fill();
+
+    ctx.fillStyle = colors.bg;
+    roundRect(x, y, w, h, 8);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    roundRect(x, y, w, h * 0.4, 8);
+    ctx.fill();
+
+    ctx.fillStyle = colors.text;
+    var fontSize = value < 100 ? w * 0.42 :
+                   value < 1000 ? w * 0.36 :
+                   value < 10000 ? w * 0.28 : w * 0.22;
+    ctx.font = 'bold ' + fontSize + 'px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(value, x + w / 2, y + h / 2 + 2);
+}
+
+function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
+// ============================================================
+// GAME OVER
+// ============================================================
+function gameOver(reason) {
+    isRunning = false;
+    SFX.gameOver();
+    saveBest();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+        '<div class="level-badge">LEVEL ' + currentLevel + ' · TARGET ' + getLevelConfig().target + '</div>' +
+        '<h1 class="dead">💀 GAME OVER</h1>' +
+        '<p>' + (reason || 'Coba lagi!') + '</p>' +
+        '<p>Skor kamu:</p>' +
+        '<div class="final-score">' + score + '</div>' +
+        '<p style="font-size: 12px; color: #94a3b8;">Terbaik: ' + bestScore + '</p>' +
+        '<button id="restartBtn" type="button">🔄 Main Lagi</button>';
+
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+    saveScore(score);
+}
+
+// ============================================================
+// WIN GAME
+// ============================================================
+function winGame() {
+    isRunning = false;
+    SFX.win();
+    saveBest();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+        '<div class="level-badge">🏆 SEMUA LEVEL SELESAI</div>' +
+        '<h1 class="win">🏆 YOU WIN!</h1>' +
+        '<p>Kamu menaklukkan semua 10 level!</p>' +
+        '<div class="final-score">' + score + '</div>' +
+        '<p style="font-size: 12px; color: #94a3b8;">Terbaik: ' + bestScore + '</p>' +
+        '<button id="restartBtn" type="button">🔄 Main Lagi</button>';
+
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+    saveScore(score);
+}
+
+// ============================================================
+// SAVE SCORE
+// ============================================================
+function saveScore(finalScore) {
+    if (finalScore <= 0) return;
+    fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: '2048', score: finalScore })
+    }).catch(function() {});
+}
+
+// ============================================================
+// INPUT - KEYBOARD
+// ============================================================
+document.addEventListener('keydown', function(e) {
+    var key = e.key.toLowerCase();
+
+    if (key === 'arrowup'    || key === 'w') { e.preventDefault(); move('up'); }
+    if (key === 'arrowdown'  || key === 's') { e.preventDefault(); move('down'); }
+    if (key === 'arrowleft'  || key === 'a') { e.preventDefault(); move('left'); }
+    if (key === 'arrowright' || key === 'd') { e.preventDefault(); move('right'); }
+
+    if (key === 'p') {
+        if (isRunning) { isPaused = !isPaused; draw(); }
+    }
+    if (key === ' ' || key === 'spacebar') {
+        e.preventDefault();
+        if (!isRunning) initGame();
+    }
+});
+
+// ============================================================
+// INPUT - TOUCH SWIPE
+// ============================================================
+var touchStartX = 0;
+var touchStartY = 0;
+
+canvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
+}, { passive: true });
+
+canvas.addEventListener('touchend', function(e) {
+    if (e.changedTouches.length > 0) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        var dy = e.changedTouches[0].clientY - touchStartY;
+        var absDx = Math.abs(dx);
+        var absDy = Math.abs(dy);
+        var threshold = 30;
+
+        if (Math.max(absDx, absDy) < threshold) return;
+
+        if (absDx > absDy) {
+            move(dx > 0 ? 'right' : 'left');
+        } else {
+            move(dy > 0 ? 'down' : 'up');
+        }
+    }
+}, { passive: true });
+
+// ============================================================
+// MOBILE CONTROLS
+// ============================================================
+document.querySelectorAll('.controls-mobile button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        if (!isRunning || isPaused) return;
+        move(btn.dataset.dir);
+    });
+});
+
+// ============================================================
+// START
+// ============================================================
+startBtn.addEventListener('click', initGame);
+
+// ============================================================
+// BOOT
+// ============================================================
+loadBest();
+fitCanvas();
+</script>
+
+</body>
+</html>

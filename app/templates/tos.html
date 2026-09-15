@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Syarat & Ketentuan - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .legal-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 40px;
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        color: var(--text-main, #0f172a);
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+    }
+
+    .legal-container h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #1e293b;
+        letter-spacing: -0.5px;
+    }
+
+    .last-updated {
+        font-size: 0.85rem;
+        color: var(--text-muted, #64748b);
+        margin-bottom: 32px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    .legal-container h3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 28px;
+        margin-bottom: 10px;
+        color: #1e293b;
+    }
+
+    .legal-container p, .legal-container ul {
+        font-size: 0.95rem;
+        color: #475569;
+        margin-bottom: 16px;
+    }
+
+    .legal-container ul {
+        padding-left: 20px;
+    }
+
+    .legal-container li {
+        margin-bottom: 6px;
+    }
+
+    .alert-box {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-size: 0.9rem;
+    }
+
+    .alert-box strong {
+        font-weight: 600;
+    }
+</style>
+
+<div class="legal-container">
+    <h1>Syarat & Ketentuan (Terms of Service)</h1>
+    <div class="last-updated">Terakhir diperbarui: 14 September 2026</div>
+
+    <p>Selamat datang di <strong>GamePortal</strong>. Dengan mengakses, mendaftar, atau menggunakan situs web dan layanan kami, Anda menyatakan bahwa Anda telah membaca, memahami, dan menyetujui untuk terikat dengan Syarat & Ketentuan ini.</p>
+
+    <h3>1. Ketentuan Umum & Kelayakan</h3>
+    <p>Untuk menggunakan layanan GamePortal, Anda menyatakan bahwa:</p>
+    <ul>
+        <li>Anda berusia minimal 13 tahun, atau berada di bawah pengawasan orang tua/wali hukum.</li>
+        <li>Informasi yang Anda berikan saat pendaftaran akun (seperti username, email, dan nomor HP) adalah akurat dan benar.</li>
+        <li>Anda tidak sedang dicekal atau dilarang oleh hukum yang berlaku untuk menerima layanan berbasis digital.</li>
+    </ul>
+
+    <h3>2. Akun, Keamanan, dan Kata Sandi</h3>
+    <p>Pengguna bertanggung jawab penuh atas segala aktivitas yang terjadi di dalam akun mereka:</p>
+    <ul>
+        <li>Anda wajib menjaga kerahasiaan kredensial akun (kata sandi/password).</li>
+        <li>GamePortal tidak bertanggung jawab atas kerugian atau kerusakan yang timbul akibat kelalaian Anda dalam menjaga keamanan akun.</li>
+        <li>Segera laporkan kepada tim dukungan kami jika terjadi penyalahgunaan atau akses tanpa izin pada akun Anda.</li>
+    </ul>
+
+    <h3>3. Larangan Keras: Judi Online & Aktivitas Ilegal</h3>
+    <div class="alert-box">
+        <strong>Pemberitahuan Hukum:</strong> GamePortal adalah platform murni untuk hiburan, kompetisi game kasual, dan e-sports. Kami melarang keras segala bentuk kegiatan <strong>perjudian online, taruhan uang asli, atau praktik keuangan ilegal</strong>.
+    </div>
+    <p>Sebagai pengguna, Anda setuju untuk **TIDAK**:
+    <ul>
+        <li>Menggunakan platform untuk bertaruh, melakukan perjudian, atau memfasilitasi transaksi uang terkait hasil permainan di luar fitur resmi platform.</li>
+        <li>Memanfaatkan sistem GamePortal untuk pencucian uang (*money laundering*) atau aktivitas kejahatan siber lainnya.</li>
+        <li>Melakukan *cheat*, eksploitasi bug sistem, menggunakan bot, atau merusak infrastruktur keamanan server kami.</li>
+    </ul>
+    <p>Pelanggaran terhadap ketentuan ini akan berakibat pada **pemblokiran akun seketika tanpa peringatan**, pencabutan seluruh akses keanggotaan, serta pelaporan kepada pihak berwenang sesuai hukum yang berlaku di Republik Indonesia.</p>
+
+    <h3>4. Keanggotaan, Langganan, dan Fitur Berbayar</h3>
+    <p>GamePortal menyediakan tingkatan akun gratis maupun berbayar (seperti Pro Gamer, VIP Legend):</p>
+    <ul>
+        <li>Biaya berlangganan dan fitur yang disertakan pada setiap paket telah diinformasikan secara transparan pada halaman harga.</li>
+        <li>Seluruh transaksi pembelian bersifat final dan tidak dapat dikembalikan (*non-refundable*), kecuali ditentukan lain oleh kebijakan hukum yang berlaku.</li>
+    </ul>
+
+    <h3>5. Hak Kekayaan Intelektual</h3>
+    <p>Seluruh aset yang terdapat di GamePortal—termasuk namun tidak terbatas pada desain logo, kode sumber, teks, grafis, tata letak, dan aset game—adalah hak milik eksklusif GamePortal atau pemberi lisensinya yang dilindungi oleh undang-undang Hak Kekayaan Intelektual.</p>
+
+    <h3>6. Batasan Tanggung Jawab</h3>
+    <p>Layanan GamePortal disediakan "sebagaimana adanya" (*as is*). Kami tidak memberikan garansi mutlak bahwa layanan akan selalu bebas dari gangguan, jeda waktu, atau kesalahan teknis. GamePortal tidak bertanggung jawab atas kerugian tidak langsung yang timbul dari penggunaan platform.</p>
+
+    <h3>7. Perubahan Ketentuan</h3>
+    <p>Kami berhak untuk mengubah, memodifikasi, atau memperbarui Syarat & Ketentuan ini sewaktu-waktu. Perubahan akan efektif segera setelah dipublikasikan di halaman ini. Penggunaan berkelanjutan Anda terhadap layanan menandakan penerimaan Anda atas ketentuan yang diperbarui.</p>
+
+    <h3>8. Hubungi Kami</h3>
+    <p>Jika Anda memiliki pertanyaan mengenai Syarat & Ketentuan ini, silakan hubungi kami melalui email di <a href="mailto:support@gameportal.com" style="color: var(--primary, #4f46e5); text-decoration: none;">support@gameportal.com</a>.</p>
+</div>
+{% endblock %}

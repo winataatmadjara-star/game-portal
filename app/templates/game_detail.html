@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+{% block title %}{{ game.title }} - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== BREADCRUMB ===== */
+    .breadcrumb {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+    .breadcrumb a {
+        color: #4f46e5;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { margin: 0 6px; }
+
+    /* ===== HERO / INFO GAME ===== */
+    .game-hero {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .game-hero-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .game-title-block h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .game-meta {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }
+    .badge.category {
+        background: #e0e7ff;
+        color: #4f46e5;
+        border: 1px solid #c7d2fe;
+    }
+    .badge.views {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+    .badge.active {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+
+    /* ===== TOMBOL PLAY ===== */
+    .btn-play {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff !important;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        font-family: inherit;
+    }
+    .btn-play:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.5);
+    }
+    .btn-play .btn-icon {
+        font-size: 1.1rem;
+    }
+
+    /* ===== INFO GRID ===== */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .info-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s;
+    }
+    .info-card:hover {
+        border-color: #c7d2fe;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.08);
+    }
+
+    .info-icon {
+        font-size: 1.6rem;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef2ff;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+
+    .info-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+    .info-label {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ===== PREVIEW / CTA GAME ===== */
+    .game-preview-wrapper {
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 60px 24px;
+        margin-bottom: 32px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .game-preview-wrapper::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.08), transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.08), transparent 50%);
+        pointer-events: none;
+    }
+
+    .game-preview-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .game-preview-emoji {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        animation: floatEmoji 3s ease-in-out infinite;
+        display: inline-block;
+    }
+    @keyframes floatEmoji {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50%      { transform: translateY(-10px) scale(1.05); }
+    }
+
+    .game-preview-content h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
+    }
+
+    .game-preview-content p {
+        font-size: 1rem;
+        color: #64748b;
+        margin-bottom: 28px;
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+
+    .game-preview-content .btn-play {
+        padding: 16px 40px;
+        font-size: 1.05rem;
+    }
+
+    /* ===== DESKRIPSI GAME ===== */
+    .game-description {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #4f46e5;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 32px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .game-description h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .game-description p {
+        font-size: 0.95rem;
+        line-height: 1.8;
+        color: #475569;
+        white-space: pre-line;
+    }
+
+    /* ===== GAME TERKAIT ===== */
+    .related-section h2 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #1e293b;
+    }
+
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+
+    .related-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .related-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        border-color: #4f46e5;
+    }
+    .related-card h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .related-card .badge {
+        align-self: flex-start;
+    }
+    .related-card p {
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .game-hero { padding: 20px; }
+        .game-title-block h1 { font-size: 1.5rem; }
+        .info-grid { grid-template-columns: repeat(2, 1fr); }
+        .game-preview-wrapper { padding: 40px 20px; }
+        .game-preview-emoji { font-size: 4rem; }
+        .game-description { padding: 18px 20px; }
+    }
+
+    @media (max-width: 480px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .btn-play { width: 100%; justify-content: center; }
+        .game-preview-content h2 { font-size: 1.3rem; }
+    }
+</style>
+
+{# ===== MAPPING EMOJI SEMUA GAME ===== #}
+{% set emoji_map = {
+    'snake':         '🐍',
+    'breakout':      '🧱',
+    'tetris':        '🎮',
+    'flappy-bird':   '🐦',
+    '2048':          '🔢',
+    'pacman':        '👻',
+    'minesweeper':   '💣',
+    'memory-card':   '🃏',
+    'space-shooter': '🚀',
+    'ninja-runner':  '🥷'
+} %}
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="breadcrumb">
+    <a href="/">🏠 Home</a>
+    <span>›</span>
+    <a href="/?category={{ game.category }}">{{ game.category }}</a>
+    <span>›</span>
+    <strong>{{ game.title }}</strong>
+</div>
+
+<!-- ===== HERO: JUDUL + TOMBOL PLAY ===== -->
+<div class="game-hero">
+    <div class="game-hero-header">
+        <div class="game-title-block">
+            <h1>{{ game.title }}</h1>
+            <div class="game-meta">
+                <span class="badge category">🎮 {{ game.category }}</span>
+                <span class="badge views">👁 {{ game.views or 0 }} views</span>
+                {% if game.is_active %}
+                    <span class="badge active">✅ Tersedia</span>
+                {% endif %}
+            </div>
+        </div>
+        <a href="/play/{{ game.slug }}" class="btn-play">
+            <span class="btn-icon">▶</span> Mainkan Sekarang
+        </a>
+    </div>
+</div>
+
+<!-- ===== INFO GRID ===== -->
+<div class="info-grid">
+    <div class="info-card">
+        <div class="info-icon">🎮</div>
+        <div class="info-text">
+            <span class="info-label">Kategori</span>
+            <span class="info-value">{{ game.category }}</span>
+        </div>
+    </div>
+    <div class="info-card">
+        <div class="info-icon">👁</div>
+        <div class="info-text">
+            <span class="info-label">Total Views</span>
+            <span class="info-value">{{ game.views or 0 }}</span>
+        </div>
+    </div>
+    <div class="info-card">
+        <div class="info-icon">📅</div>
+        <div class="info-text">
+            <span class="info-label">Ditambahkan</span>
+            <span class="info-value">{{ game.created_at.strftime('%d %b %Y') if game.created_at else '-' }}</span>
+        </div>
+    </div>
+    <div class="info-card">
+        <div class="info-icon">🆔</div>
+        <div class="info-text">
+            <span class="info-label">Slug</span>
+            <span class="info-value">{{ game.slug }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PREVIEW / CTA GAME ===== -->
+<div class="game-preview-wrapper">
+    <div class="game-preview-content">
+        <div class="game-preview-emoji">
+            {{ emoji_map.get(game.slug, '🎮') }}
+        </div>
+        <h2>Siap Bermain {{ game.title }}?</h2>
+        <p>
+            Klik tombol di bawah untuk membuka halaman permainan.
+            {% if not logged_in %}Login untuk main tanpa batas!{% endif %}
+        </p>
+        <a href="/play/{{ game.slug }}" class="btn-play">
+            <span class="btn-icon">▶</span> Mainkan Sekarang
+        </a>
+    </div>
+</div>
+
+<!-- ===== DESKRIPSI LENGKAP ===== -->
+{% if game.description %}
+<div class="game-description">
+    <h2>📖 Tentang Game Ini</h2>
+    <p>{{ game.description }}</p>
+</div>
+{% endif %}
+
+<!-- ===== GAME TERKAIT ===== -->
+{% if related %}
+<div class="related-section">
+    <h2>🎯 Game Serupa</h2>
+    <div class="related-grid">
+        {% for g in related %}
+        <a href="{{ url_for('web.game_detail_page', game_slug=g.slug) }}" class="related-card">
+            <h3>{{ g.title }}</h3>
+            <span class="badge category">{{ g.category }}</span>
+            {% if g.description %}
+                <p>{{ g.description }}</p>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

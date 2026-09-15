@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Memory Card Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+html, body {
+    width: 100%; height: 100%; overflow: hidden; position: fixed;
+    background: #0a0e27; color: #fff; touch-action: none;
+}
+body { display: flex; justify-content: center; align-items: center; }
+
+.bg-aurora {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(34, 211, 238, 0.15), transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(167, 139, 250, 0.15), transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.1), transparent 60%);
+    animation: auroraShift 14s ease-in-out infinite alternate;
+}
+@keyframes auroraShift {
+    0%   { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.15) rotate(-3deg); }
+}
+
+.game-container {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 10px; width: 100%; height: 100%;
+}
+
+.title {
+    font-size: 1.5rem; font-weight: 800;
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px; text-transform: uppercase;
+    filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.5));
+}
+
+.hud {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 560px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.hud-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hud-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+.hud-value { font-size: 16px; font-weight: 700; font-family: 'Courier New', monospace; }
+.hud .level  .hud-value { color: #22d3ee; }
+.hud .pairs  .hud-value { color: #a78bfa; }
+.hud .moves  .hud-value { color: #fbbf24; }
+.hud .timer  .hud-value { color: #4ade80; }
+
+.level-progress {
+    width: 100%; max-width: 560px; height: 6px;
+    background: rgba(15, 23, 42, 0.85);
+    border-radius: 3px; overflow: hidden;
+    border: 1px solid rgba(34, 211, 238, 0.2);
+}
+.level-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #22d3ee, #a78bfa);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+}
+
+.canvas-wrapper {
+    position: relative; display: inline-block;
+    padding: 12px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 3px solid rgba(34, 211, 238, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 0 40px rgba(34, 211, 238, 0.2), inset 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+canvas {
+    display: block;
+    background: #1e293b;
+    border-radius: 10px;
+    touch-action: none;
+    cursor: pointer;
+}
+
+.overlay {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 20px;
+    z-index: 10;
+    border-radius: 16px;
+    animation: popIn 0.3s ease;
+}
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.overlay.hidden { display: none; }
+
+.overlay h1 {
+    font-size: 1.8rem; margin-bottom: 12px;
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+}
+.overlay h1.dead {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.overlay h1.win {
+    background: linear-gradient(135deg, #fbbf24, #22c55e);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.overlay p {
+    margin-bottom: 6px; font-size: 13px;
+    color: #cbd5e1; line-height: 1.5;
+    max-width: 340px;
+}
+
+.overlay .final-score {
+    font-size: 2.2rem; font-weight: 800; color: #fbbf24;
+    margin: 12px 0; text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+    font-family: 'Courier New', monospace;
+}
+
+.overlay button {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    color: #fff; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    margin-top: 10px; transition: all 0.2s;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.4);
+    position: relative;
+    z-index: 20;
+}
+.overlay button:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 25px rgba(34, 211, 238, 0.6);
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    background: rgba(34, 211, 238, 0.2);
+    border: 1px solid #22d3ee;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #22d3ee;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.level-toast {
+    position: fixed; top: 18%; left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: linear-gradient(135deg, #22d3ee, #a78bfa);
+    color: #fff; padding: 14px 28px; border-radius: 14px;
+    font-size: 16px; font-weight: 800; letter-spacing: 1px;
+    z-index: 100; box-shadow: 0 10px 40px rgba(34, 211, 238, 0.6);
+    pointer-events: none; text-align: center;
+}
+.level-toast.show { animation: toastPop 2s ease forwards; }
+@keyframes toastPop {
+    0%   { transform: translateX(-50%) scale(0);   opacity: 0; }
+    15%  { transform: translateX(-50%) scale(1.1); opacity: 1; }
+    25%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+    85%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+}
+
+@media (max-width: 600px) {
+    .title { font-size: 1.2rem; }
+    .hud { max-width: 96vw; font-size: 11px; padding: 8px 10px; }
+    .hud-value { font-size: 13px; }
+    .overlay h1 { font-size: 1.4rem; }
+    .overlay .final-score { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-aurora"></div>
+
+<div class="game-container">
+    <div class="title">🃏 Memory Card</div>
+
+    <div class="hud">
+        <div class="hud-item level">
+            <span class="hud-label">Level</span>
+            <span class="hud-value" id="levelDisplay">1/10</span>
+        </div>
+        <div class="hud-item pairs">
+            <span class="hud-label">Pasangan</span>
+            <span class="hud-value" id="pairsFound">0/6</span>
+        </div>
+        <div class="hud-item moves">
+            <span class="hud-label">Langkah</span>
+            <span class="hud-value" id="moves">0</span>
+        </div>
+        <div class="hud-item timer">
+            <span class="hud-label">⏱ Time</span>
+            <span class="hud-value" id="timer">00:00</span>
+        </div>
+    </div>
+
+    <div class="level-progress">
+        <div class="level-progress-fill" id="levelProgress"></div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+
+        <div id="overlay" class="overlay">
+            <div class="level-badge" id="levelBadge">LEVEL 1 · 3×4 · 6 PASANGAN</div>
+            <h1>🃏 Memory Card</h1>
+            <p><strong>10 Level</strong> dengan jumlah kartu bertambah!</p>
+            <p>Cocokkan pasangan kartu yang sama</p>
+            <p>Ingat posisi kartu, jangan asal klik!</p>
+            <button id="startBtn" type="button">▶ Mulai Bermain</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="level-toast"></div>
+
+<script>
+// ============================================================
+// MEMORY CARD ADVENTURE - 10 Level
+// ============================================================
+
+var canvas = document.getElementById('gameCanvas');
+var ctx = canvas.getContext('2d');
+var levelDisplay = document.getElementById('levelDisplay');
+var pairsFoundEl = document.getElementById('pairsFound');
+var movesEl = document.getElementById('moves');
+var timerEl = document.getElementById('timer');
+var levelProgress = document.getElementById('levelProgress');
+var overlay = document.getElementById('overlay');
+var levelBadge = document.getElementById('levelBadge');
+var startBtn = document.getElementById('startBtn');
+var toast = document.getElementById('toast');
+
+// ============================================================
+// 10 LEVEL: papan makin besar
+// ============================================================
+var LEVELS = [
+    { cols: 3, rows: 4,  iconCount: 6  },  // 12 kartu, 6 pasangan
+    { cols: 4, rows: 4,  iconCount: 8  },  // 16 kartu, 8 pasangan
+    { cols: 4, rows: 5,  iconCount: 10 },  // 20 kartu, 10 pasangan
+    { cols: 5, rows: 4,  iconCount: 10 },
+    { cols: 5, rows: 6,  iconCount: 15 },
+    { cols: 6, rows: 5,  iconCount: 15 },
+    { cols: 6, rows: 6,  iconCount: 18 },
+    { cols: 6, rows: 7,  iconCount: 21 },
+    { cols: 7, rows: 6,  iconCount: 21 },
+    { cols: 8, rows: 6,  iconCount: 24 }
+];
+
+// Icon pool (emoji)
+var ICONS = [
+    '🍎', '🍌', '🍇', '🍓', '🍒', '🍑', '🍍', '🥝',
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼',
+    '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🏓',
+    '⭐', '🌟', '✨', '💫', '🌙', '☀️', '⛅', '🌈',
+    '🚗', '🚕', '🚙', '🚌', '🚓', '🚑', '🚒', '🚐'
+];
+
+var currentLevel = 1;
+var cards = [];
+var selected = [];
+var matchedCount = 0;
+var totalPairs = 0;
+var moves = 0;
+var lockClick = false;
+var startTime = 0;
+var elapsed = 0;
+var timerInterval = null;
+var gameState = 'ready';
+
+var COLS = 3;
+var ROWS = 4;
+var CARD_W = 100;
+var CARD_H = 120;
+var GAP = 8;
+var OFFSET_X = 0;
+var OFFSET_Y = 0;
+
+var isRunning = false;
+
+// ============================================================
+// AUDIO
+// ============================================================
+var audioCtx = null;
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { audioCtx = null; }
+    }
+}
+function playSound(freq, duration, type, volume) {
+    type = type || 'sine';
+    volume = volume || 0.06;
+    if (!audioCtx) return;
+    try {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = volume;
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+}
+var SFX = {
+    flip: function() { playSound(500, 0.05, 'sine', 0.04); },
+    match: function() { [660, 880].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.08, 'square', 0.06); }, i * 60); }); },
+    wrong: function() { playSound(200, 0.15, 'sawtooth', 0.06); },
+    levelUp: function() { [523, 659, 784, 1047].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.15); }, i * 100); }); },
+    win: function() { [523, 659, 784, 1047, 1319].forEach(function(f, i) { setTimeout(function() { playSound(f, 0.2); }, i * 130); }); }
+};
+
+// ============================================================
+// FIT CANVAS
+// ============================================================
+function fitCanvas() {
+    var cfg = LEVELS[Math.min(currentLevel - 1, LEVELS.length - 1)];
+    var maxW = Math.min(window.innerWidth - 40, 600);
+    var maxH = Math.min(window.innerHeight - 240, 600);
+
+    var cw = (maxW - GAP * (cfg.cols + 1)) / cfg.cols;
+    var ch = (maxH - GAP * (cfg.rows + 1)) / cfg.rows;
+
+    // Jaga rasio kartu 5:6
+    var ratio = 5 / 6;
+    var cardW = Math.floor(Math.min(cw, ch * ratio));
+    var cardH = Math.floor(cardW / ratio);
+
+    // Batasi ukuran
+    if (cardW < 40) cardW = 40;
+    if (cardH < 48) cardH = 48;
+    if (cardW > 90) cardW = 90;
+    if (cardH > 108) cardH = 108;
+
+    CARD_W = cardW;
+    CARD_H = cardH;
+
+    var boardW = CARD_W * cfg.cols + GAP * (cfg.cols + 1);
+    var boardH = CARD_H * cfg.rows + GAP * (cfg.rows + 1);
+
+    canvas.width = boardW;
+    canvas.height = boardH;
+    canvas.style.width = boardW + 'px';
+    canvas.style.height = boardH + 'px';
+
+    if (cards.length > 0) draw();
+}
+window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', function() { setTimeout(fitCanvas, 200); });
+
+// ============================================================
+// TIMER
+// ============================================================
+function formatTime(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+function startTimer() {
+    startTime = Date.now();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(function() {
+        if (gameState === 'playing') {
+            elapsed = Math.floor((Date.now() - startTime) / 1000);
+            timerEl.textContent = formatTime(elapsed);
+        }
+    }, 500);
+}
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+
+// ============================================================
+// LEVEL HELPERS
+// ============================================================
+function getLevelConfig() {
+    return LEVELS[Math.min(currentLevel - 1, LEVELS.length - 1)];
+}
+
+function updateLevelUI() {
+    levelDisplay.textContent = currentLevel + '/10';
+    var cfg = getLevelConfig();
+    levelBadge.textContent = 'LEVEL ' + currentLevel + ' · ' + cfg.cols + '×' + cfg.rows + ' · ' + cfg.iconCount + ' PASANGAN';
+    pairsFoundEl.textContent = matchedCount + '/' + totalPairs;
+    movesEl.textContent = moves;
+    var pct = totalPairs > 0 ? (matchedCount / totalPairs) * 100 : 0;
+    levelProgress.style.width = pct + '%';
+}
+
+function showToast(text) {
+    toast.textContent = text;
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+}
+
+// ============================================================
+// INIT BOARD
+// ============================================================
+function initBoard() {
+    var cfg = getLevelConfig();
+    COLS = cfg.cols;
+    ROWS = cfg.rows;
+    totalPairs = cfg.iconCount;
+    matchedCount = 0;
+    moves = 0;
+    selected = [];
+    lockClick = false;
+    elapsed = 0;
+    gameState = 'ready';
+    timerEl.textContent = '00:00';
+
+    // Pilih ikon secara acak
+    var shuffled = ICONS.slice().sort(function() { return Math.random() - 0.5; });
+    var chosen = shuffled.slice(0, totalPairs);
+
+    // Buat deck: setiap ikon muncul 2x
+    var deck = [];
+    chosen.forEach(function(icon) {
+        deck.push({ icon: icon, matched: false, flipped: false });
+        deck.push({ icon: icon, matched: false, flipped: false });
+    });
+
+    // Shuffle deck
+    deck.sort(function() { return Math.random() - 0.5; });
+
+    // Susun ke grid
+    cards = [];
+    var idx = 0;
+    for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+            var card = deck[idx++];
+            card.r = r;
+            card.c = c;
+            cards.push(card);
+        }
+    }
+
+    updateLevelUI();
+    fitCanvas();
+    draw();
+}
+
+// ============================================================
+// INIT GAME
+// ============================================================
+function initGame() {
+    initAudio();
+    currentLevel = 1;
+    overlay.classList.add('hidden');
+    isRunning = true;
+    initBoard();
+}
+
+// ============================================================
+// CARD CLICK
+// ============================================================
+function flipCard(card) {
+    if (lockClick) return;
+    if (card.matched || card.flipped) return;
+    if (gameState === 'won' || gameState === 'lost') return;
+
+    if (gameState === 'ready') {
+        gameState = 'playing';
+        startTimer();
+    }
+
+    card.flipped = true;
+    selected.push(card);
+    SFX.flip();
+    draw();
+
+    if (selected.length === 2) {
+        moves++;
+        movesEl.textContent = moves;
+        lockClick = true;
+
+        var a = selected[0];
+        var b = selected[1];
+
+        if (a.icon === b.icon) {
+            // Cocok
+            setTimeout(function() {
+                a.matched = true;
+                b.matched = true;
+                matchedCount++;
+                SFX.match();
+                selected = [];
+                lockClick = false;
+                updateLevelUI();
+                draw();
+                checkWin();
+            }, 400);
+        } else {
+            // Tidak cocok
+            setTimeout(function() {
+                a.flipped = false;
+                b.flipped = false;
+                SFX.wrong();
+                selected = [];
+                lockClick = false;
+                draw();
+            }, 800);
+        }
+    }
+}
+
+function checkWin() {
+    if (matchedCount === totalPairs) {
+        gameState = 'won';
+        stopTimer();
+        SFX.levelUp();
+        setTimeout(function() {
+            nextLevel();
+        }, 600);
+    }
+}
+
+// ============================================================
+// NEXT LEVEL
+// ============================================================
+function nextLevel() {
+    if (currentLevel >= 10) {
+        winGame();
+        return;
+    }
+
+    var next = currentLevel + 1;
+    showToast('🎉 LEVEL ' + next + '!');
+
+    setTimeout(function() {
+        currentLevel = next;
+        initBoard();
+    }, 1500);
+}
+
+// ============================================================
+// DRAW
+// ============================================================
+function draw() {
+    if (!cards || cards.length === 0) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    cards.forEach(function(card) {
+        var x = GAP + card.c * (CARD_W + GAP);
+        var y = GAP + card.r * (CARD_H + GAP);
+
+        drawCard(x, y, CARD_W, CARD_H, card);
+    });
+}
+
+function drawCard(x, y, w, h, card) {
+    if (card.matched) {
+        // Kartu sudah cocok - hijau dengan glow
+        ctx.fillStyle = '#22c55e';
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 15;
+        roundRect(x, y, w, h, 8);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Icon
+        ctx.font = Math.floor(h * 0.5) + 'px "Segoe UI Emoji", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(card.icon, x + w / 2, y + h / 2 + 2);
+    } else if (card.flipped) {
+        // Kartu terbuka
+        ctx.fillStyle = '#f1f5f9';
+        roundRect(x, y, w, h, 8);
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 3;
+        roundRect(x, y, w, h, 8);
+        ctx.stroke();
+
+        // Icon
+        ctx.font = Math.floor(h * 0.5) + 'px "Segoe UI Emoji", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(card.icon, x + w / 2, y + h / 2 + 2);
+    } else {
+        // Kartu tertutup - belakang
+        var grad = ctx.createLinearGradient(x, y, x + w, y + h);
+        grad.addColorStop(0, '#22d3ee');
+        grad.addColorStop(1, '#a78bfa');
+        ctx.fillStyle = grad;
+        roundRect(x, y, w, h, 8);
+        ctx.fill();
+
+        // Pattern di belakang
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 2;
+        for (var i = -h; i < w; i += 12) {
+            ctx.beginPath();
+            ctx.moveTo(x + i, y);
+            ctx.lineTo(x + i + h, y + h);
+            ctx.stroke();
+        }
+
+        // Border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        roundRect(x + 1, y + 1, w - 2, h - 2, 8);
+        ctx.stroke();
+
+        // Tanda tanya besar
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = 'bold ' + Math.floor(h * 0.4) + 'px "Segoe UI", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', x + w / 2, y + h / 2 + 2);
+    }
+}
+
+function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
+// ============================================================
+// GAME OVER
+// ============================================================
+function gameOver(reason) {
+    isRunning = false;
+    stopTimer();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+        '<div class="level-badge">LEVEL ' + currentLevel + '</div>' +
+        '<h1 class="dead">💀 GAME OVER</h1>' +
+        '<p>' + (reason || 'Coba lagi!') + '</p>' +
+        '<p>Langkah: ' + moves + '</p>' +
+        '<p>Waktu: ' + formatTime(elapsed) + '</p>' +
+        '<button id="restartBtn" type="button">🔄 Main Lagi</button>';
+
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+}
+
+// ============================================================
+// WIN GAME
+// ============================================================
+function winGame() {
+    isRunning = false;
+    stopTimer();
+    SFX.win();
+
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+        '<div class="level-badge">🏆 SEMUA LEVEL SELESAI</div>' +
+        '<h1 class="win">🏆 YOU WIN!</h1>' +
+        '<p>Kamu menaklukkan semua 10 level!</p>' +
+        '<p>Total langkah: ' + moves + '</p>' +
+        '<p>Total waktu: ' + formatTime(elapsed) + '</p>' +
+        '<button id="restartBtn" type="button">🔄 Main Lagi</button>';
+
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+    saveScore();
+}
+
+// ============================================================
+// SAVE SCORE
+// ============================================================
+function saveScore() {
+    // Skor = kombinasi: makin sedikit langkah dan cepat = skor tinggi
+    var finalScore = Math.max(100, 10000 - moves * 20 - elapsed * 10);
+    fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: 'memory-card', score: finalScore })
+    }).catch(function() {});
+}
+
+// ============================================================
+// INPUT - MOUSE
+// ============================================================
+function getCardFromPos(clientX, clientY) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+
+    var x = (clientX - rect.left) * scaleX;
+    var y = (clientY - rect.top) * scaleY;
+
+    for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var cx = GAP + card.c * (CARD_W + GAP);
+        var cy = GAP + card.r * (CARD_H + GAP);
+        if (x >= cx && x <= cx + CARD_W && y >= cy && y <= cy + CARD_H) {
+            return card;
+        }
+    }
+    return null;
+}
+
+canvas.addEventListener('click', function(e) {
+    if (!isRunning) return;
+    var card = getCardFromPos(e.clientX, e.clientY);
+    if (card) flipCard(card);
+});
+
+canvas.addEventListener('touchstart', function(e) {
+    if (!isRunning) return;
+    if (e.touches.length !== 1) return;
+    var t = e.touches[0];
+    var card = getCardFromPos(t.clientX, t.clientY);
+    if (card) {
+        e.preventDefault();
+        flipCard(card);
+    }
+}, { passive: false });
+
+// ============================================================
+// START
+// ============================================================
+startBtn.addEventListener('click', initGame);
+
+// ============================================================
+// BOOT
+// ============================================================
+fitCanvas();
+</script>
+
+</body>
+</html>

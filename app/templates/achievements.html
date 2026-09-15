@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Achievement - GamePortal{% endblock %}
+
+{% block content %}
+<style>
+    .ach-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    .ach-header h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+    .ach-header p {
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    .progress-card {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        border-radius: 16px;
+        padding: 24px 28px;
+        color: #fff;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
+    }
+    .progress-info { flex: 1; min-width: 200px; }
+    .progress-info h2 {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+    .progress-info p {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .progress-bar-big {
+        width: 100%;
+        height: 10px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 12px;
+    }
+    .progress-fill-big {
+        height: 100%;
+        background: #fbbf24;
+        border-radius: 5px;
+        transition: width 0.5s;
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
+    }
+    .progress-stats {
+        display: flex;
+        gap: 24px;
+        text-align: center;
+    }
+    .progress-stat {
+        display: flex;
+        flex-direction: column;
+    }
+    .progress-stat .val {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .progress-stat .lbl {
+        font-size: 0.75rem;
+        opacity: 0.85;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 4px;
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .ach-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .ach-card {
+        background: #fff;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 20px;
+        display: flex;
+        gap: 14px;
+        transition: all 0.25s;
+        position: relative;
+    }
+    .ach-card.unlocked {
+        border-color: #fbbf24;
+        background: linear-gradient(135deg, #fffbeb, #fff);
+        box-shadow: 0 4px 16px rgba(251, 191, 36, 0.15);
+    }
+    .ach-card.unlocked:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(251, 191, 36, 0.25);
+    }
+    .ach-card.locked {
+        opacity: 0.6;
+    }
+    .ach-card.locked:hover {
+        opacity: 0.8;
+    }
+
+    .ach-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+    }
+    .ach-card.unlocked .ach-icon {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+    }
+    .ach-card.locked .ach-icon {
+        background: #f1f5f9;
+        filter: grayscale(1);
+    }
+
+    .ach-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+    .ach-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .ach-desc {
+        font-size: 0.82rem;
+        color: #64748b;
+        line-height: 1.4;
+    }
+    .ach-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+        font-size: 0.75rem;
+    }
+    .ach-points {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+    .ach-card.locked .ach-points {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+    .ach-category {
+        color: #94a3b8;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .lock-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 1rem;
+        opacity: 0.4;
+    }
+    .unlock-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 0.75rem;
+        background: #22c55e;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+        .progress-card { padding: 20px; }
+        .progress-stat .val { font-size: 1.5rem; }
+    }
+</style>
+
+<!-- ===== HEADER ===== -->
+<div class="ach-header">
+    <h1>🏆 Achievement</h1>
+    <p>Koleksi badge pencapaianmu di GamePortal</p>
+</div>
+
+<!-- ===== PROGRESS CARD ===== -->
+<div class="progress-card">
+    <div class="progress-info">
+        <h2>Progres Pencapaian</h2>
+        <p>Kamu sudah membuka {{ total_unlocked }} dari {{ total_achievements }} achievement</p>
+        <div class="progress-bar-big">
+            <div class="progress-fill-big" style="width: {{ (total_unlocked / total_achievements * 100) if total_achievements > 0 else 0 }}%;"></div>
+        </div>
+    </div>
+    <div class="progress-stats">
+        <div class="progress-stat">
+            <span class="val">{{ total_unlocked }}</span>
+            <span class="lbl">Terbuka</span>
+        </div>
+        <div class="progress-stat">
+            <span class="val">{{ total_achievements - total_unlocked }}</span>
+            <span class="lbl">Terkunci</span>
+        </div>
+        <div class="progress-stat">
+            <span class="val">{{ total_points }}</span>
+            <span class="lbl">Poin</span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== UNLOCKED ===== -->
+{% if unlocked %}
+<div class="section-title">✅ Terbuka ({{ unlocked|length }})</div>
+<div class="ach-grid">
+    {% for a in unlocked %}
+    <div class="ach-card unlocked">
+        <span class="unlock-badge">✓</span>
+        <div class="ach-icon">{{ a.icon }}</div>
+        <div class="ach-body">
+            <span class="ach-title">{{ a.title }}</span>
+            <span class="ach-desc">{{ a.description }}</span>
+            <div class="ach-meta">
+                <span class="ach-category">{{ a.category }}</span>
+                <span class="ach-points">+{{ a.points }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ===== LOCKED ===== -->
+{% if locked %}
+<div class="section-title">🔒 Terkunci ({{ locked|length }})</div>
+<div class="ach-grid">
+    {% for a in locked %}
+    <div class="ach-card locked">
+        <span class="lock-badge">🔒</span>
+        <div class="ach-icon">{{ a.icon }}</div>
+        <div class="ach-body">
+            <span class="ach-title">{{ a.title }}</span>
+            <span class="ach-desc">{{ a.description }}</span>
+            <div class="ach-meta">
+                <span class="ach-category">{{ a.category }}</span>
+                <span class="ach-points">+{{ a.points }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not unlocked and not locked %}
+<div class="empty-state">
+    <p>Belum ada achievement. Hubungi admin untuk setup.</p>
+</div>
+{% endif %}
+
+{% endblock %}
