@@ -1,31 +1,35 @@
-# ============================================================
-# Dockerfile — Flask + PostgreSQL
-# ============================================================
+# Dockerfile - Flask + PostgreSQL
 FROM python:3.11-slim
 
+# Direktori kerja aplikasi
 WORKDIR /app
 
-# Install system dependencies (untuk psycopg2)
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
+# Dependensi sistem untuk psycopg2
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements & install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependensi Python
+COPY requirements.txt ./
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir gunicorn
 
-# Copy seluruh project
-COPY . .
+# Salin source code aplikasi
+COPY . ./
 
-# Environment
-ENV FLASK_APP=run.py
-ENV FLASK_ENV=production
-ENV FLASK_DEBUG=0
-ENV PYTHONUNBUFFERED=1
+# Environment runtime
+ENV FLASK_APP=run.py \
+    FLASK_ENV=production \
+    FLASK_DEBUG=0 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-# Port Flask
+# Port internal aplikasi
 EXPOSE 5000
 
-# Gunicorn untuk production (WSGI)
+# Jalankan Flask melalui Gunicorn
+# run.py harus memiliki objek Flask bernama app
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "run:app"]
